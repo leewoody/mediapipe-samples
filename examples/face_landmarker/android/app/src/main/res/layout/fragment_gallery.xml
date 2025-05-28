@@ -19,12 +19,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="@dimen/bottom_sheet_peek_height">
-
         <TextView
             android:id="@+id/tvPlaceholder"
             android:layout_width="match_parent"
@@ -32,12 +30,10 @@
             android:gravity="center"
             android:text="@string/tv_gallery_placeholder"
             app:layout_constraintTop_toTopOf="parent" />
-
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginBottom="@dimen/bottom_sheet_peek_height">
-
             <ImageView
                 android:id="@+id/imageResult"
                 android:layout_width="match_parent"
@@ -45,19 +41,16 @@
                 android:contentDescription="@null"
                 android:scaleType="fitStart"
                 android:visibility="gone" />
-
             <VideoView
                 android:id="@+id/videoView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:visibility="gone" />
-
             <com.google.mediapipe.examples.facelandmarker.OverlayView
                 android:id="@+id/overlay"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_centerInParent="true" />
-
             <androidx.core.widget.ContentLoadingProgressBar
                 android:id="@+id/progress"
                 style="?android:attr/progressBarStyle"
@@ -67,11 +60,8 @@
                 android:indeterminate="true"
                 android:theme="@style/AppThemeProgressStyle"
                 android:visibility="gone" />
-
         </RelativeLayout>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabGetContent"
         android:layout_width="wrap_content"
@@ -84,11 +74,9 @@
         app:layout_anchorGravity="top|right"
         app:tint="@android:color/white"
         app:useCompatPadding="true" />
-
     <include
         android:id="@+id/bottom_sheet_layout"
         layout="@layout/info_bottom_sheet" />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerview_results"
         android:layout_width="match_parent"
@@ -101,7 +89,6 @@
         app:layout_anchor="@id/bottom_sheet_layout"
         app:layout_anchorGravity="top"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
-
     <View
         android:layout_width="wrap_content"
         android:layout_height="1dp"

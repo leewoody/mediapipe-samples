@@ -114,6 +114,11 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         fragmentGalleryBinding.imageResult.visibility = View.GONE
         fragmentGalleryBinding.tvPlaceholder.visibility = View.VISIBLE
 
+        // Shutdown the background executor
+        if (::backgroundExecutor.isInitialized) {
+            backgroundExecutor.shutdown()
+        }
+
         activity?.runOnUiThread {
             faceBlendshapesResultAdapter.updateResults(null)
             faceBlendshapesResultAdapter.notifyDataSetChanged()
@@ -329,12 +334,16 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
             setVideoURI(uri)
             // mute the audio
             setOnPreparedListener { it.setVolume(0f, 0f) }
+            // Add completion listener for looping
+            setOnCompletionListener {
+                // Restart video from beginning
+                start()
+            }
             requestFocus()
         }
 
         backgroundExecutor = Executors.newSingleThreadScheduledExecutor()
         backgroundExecutor.execute {
-
             faceLandmarkerHelper =
                 FaceLandmarkerHelper(
                     context = requireContext(),
@@ -363,41 +372,48 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
 
     // Setup and display the video.
     private fun displayVideoResult(result: FaceLandmarkerHelper.VideoResultBundle) {
-
         fragmentGalleryBinding.videoView.visibility = View.VISIBLE
         fragmentGalleryBinding.progress.visibility = View.GONE
 
         fragmentGalleryBinding.videoView.start()
-        val videoStartTimeMs = SystemClock.uptimeMillis()
+        var videoStartTimeMs = SystemClock.uptimeMillis()
+        var lastResultIndex = -1
 
         backgroundExecutor.scheduleAtFixedRate(
             {
                 activity?.runOnUiThread {
-                    val videoElapsedTimeMs =
-                        SystemClock.uptimeMillis() - videoStartTimeMs
-                    val resultIndex =
-                        videoElapsedTimeMs.div(VIDEO_INTERVAL_MS).toInt()
+                    val videoElapsedTimeMs = SystemClock.uptimeMillis() - videoStartTimeMs
+                    val resultIndex = videoElapsedTimeMs.div(VIDEO_INTERVAL_MS).toInt()
 
-                    if (resultIndex >= result.results.size || fragmentGalleryBinding.videoView.visibility == View.GONE) {
+                    if (fragmentGalleryBinding.videoView.visibility == View.GONE) {
                         // The video playback has finished so we stop drawing bounding boxes
                         backgroundExecutor.shutdown()
                     } else {
-                        fragmentGalleryBinding.overlay.setResults(
-                            result.results[resultIndex],
-                            result.inputImageHeight,
-                            result.inputImageWidth,
-                            RunningMode.VIDEO
-                        )
+                        // Handle video looping
+                        if (resultIndex >= result.results.size) {
+                            // Reset the start time when video loops
+                            videoStartTimeMs = SystemClock.uptimeMillis()
+                            lastResultIndex = -1
+                        } else if (resultIndex != lastResultIndex) {
+                            // Only update if we have a new frame
+                            fragmentGalleryBinding.overlay.setResults(
+                                result.results[resultIndex],
+                                result.inputImageHeight,
+                                result.inputImageWidth,
+                                RunningMode.VIDEO
+                            )
 
-                        if (fragmentGalleryBinding.recyclerviewResults.scrollState != ViewPager2.SCROLL_STATE_DRAGGING) {
-                            faceBlendshapesResultAdapter.updateResults(result.results[resultIndex])
-                            faceBlendshapesResultAdapter.notifyDataSetChanged()
+                            if (fragmentGalleryBinding.recyclerviewResults.scrollState != ViewPager2.SCROLL_STATE_DRAGGING) {
+                                faceBlendshapesResultAdapter.updateResults(result.results[resultIndex])
+                                faceBlendshapesResultAdapter.notifyDataSetChanged()
+                            }
+
+                            setUiEnabled(true)
+                            fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
+                                String.format("%d ms", result.inferenceTime)
+                            
+                            lastResultIndex = resultIndex
                         }
-
-                        setUiEnabled(true)
-
-                        fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
-                            String.format("%d ms", result.inferenceTime)
                     }
                 }
             },
