@@ -73,7 +73,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         linePaint.strokeWidth = LANDMARK_STROKE_WIDTH
         linePaint.style = Paint.Style.STROKE
 
-        pointPaint.color = Color.YELLOW
+        pointPaint.color = Color.BLUE
         pointPaint.strokeWidth = LANDMARK_STROKE_WIDTH
         pointPaint.style = Paint.Style.FILL
 
@@ -118,30 +118,30 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 150f
                 
                 // Draw colored background for face number
-                val numberBackgroundPaint = Paint().apply {
-                    color = faceColors[index % faceColors.size]
-                    alpha = 180
-                    style = Paint.Style.FILL
-                }
-                canvas.drawRect(
-                    faceNumberX - 10f,
-                    faceNumberY - 30f,
-                    faceNumberX + 100f,
-                    faceNumberY + 10f,
-                    numberBackgroundPaint
-                )
+                // val numberBackgroundPaint = Paint().apply {
+                //     color = faceColors[index % faceColors.size]
+                //     alpha = 180
+                //     style = Paint.Style.FILL
+                // }
+                // canvas.drawRect(
+                //     faceNumberX - 10f,
+                //     faceNumberY - 30f,
+                //     faceNumberX + 100f,
+                //     faceNumberY + 10f,
+                //     numberBackgroundPaint
+                // )
                 
-                textPaint.color = Color.BLACK
-                canvas.drawText(
-                    "Face ${index + 1}",
-                    faceNumberX,
-                    faceNumberY,
-                    textPaint
-                )
+                // textPaint.color = Color.BLACK
+                // canvas.drawText(
+                //     "Face ${index + 1}",
+                //     faceNumberX,
+                //     faceNumberY,
+                //     textPaint
+                // )
 
                 // Analyze and draw face pose information
-                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
-                drawFacePoseInfo(canvas, facePose, offsetX, offsetY, index)
+                //val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+                //drawFacePoseInfo(canvas, facePose, offsetX, offsetY, index)
             }
         }
     }
@@ -157,7 +157,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     ) {
         // Draw all face landmarks with smaller size and transparency
         val landmarkPaint = Paint().apply {
-            color = Color.argb(180, 255, 255, 0)  // Semi-transparent yellow
+            color = Color.argb(150, 200, 10, 200)  // Semi-transparent yellow
             strokeWidth = 1f * scaleFactor  // Thinner lines
             style = Paint.Style.FILL
             isAntiAlias = true
@@ -167,6 +167,23 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             val x = landmark.x() * imageWidth * scaleFactor + offsetX
             val y = landmark.y() * imageHeight * scaleFactor + offsetY
             canvas.drawCircle(x, y, 1f * scaleFactor, landmarkPaint)  // Smaller points
+        }
+
+        // Draw head pose and gaze visualizations at the nose tip
+        val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+        //val noseTip = faceLandmarks[1]
+        //val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+        //val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+        //drawHeadPoseVisualization(canvas, facePose, noseX, noseY)
+        //drawGazeVisualization(canvas, facePose, noseX, noseY)
+
+        // Draw head pose and gaze visualizations at the bottom of the face mesh (landmark 152)
+        if (faceLandmarks.size > 152) {
+            val chin = faceLandmarks[152]
+            val chinX = chin.x() * imageWidth * scaleFactor + offsetX
+            val chinY = chin.y() * imageHeight * scaleFactor + offsetY
+            drawHeadPoseVisualization(canvas, facePose, chinX, chinY)
+            drawGazeVisualization(canvas, facePose, chinX, chinY)
         }
 
         // Draw head pose axes on the face
@@ -439,21 +456,21 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
 
         // Draw axis labels with smaller text and transparency
-        val labelPaint = Paint().apply {
-            textSize = 10f * scaleFactor  // Changed from 10f to 12f
-            isAntiAlias = true
-            alpha = 140  // Added transparency
-        }
+        // val labelPaint = Paint().apply {
+        //     textSize = 10f * scaleFactor  // Changed from 10f to 12f
+        //     isAntiAlias = true
+        //     alpha = 140  // Added transparency
+        // }
 
-        // Draw labels for each axis
-        labelPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
-        canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
+        // // Draw labels for each axis
+        // labelPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+        // canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
         
-        labelPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
-        canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
+        // labelPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+        // canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
         
-        labelPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
-        canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+        // labelPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+        // canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
     }
 
     private fun drawGradientAxis(
@@ -474,6 +491,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         canvas.drawCircle(start[0], start[1], radius, gradientPaint)
         canvas.drawCircle(end[0], end[1], radius, gradientPaint)
     }
+
 
     private fun drawOrientationText(
         canvas: Canvas,
@@ -504,7 +522,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         )
 
         // Draw text with smaller size and transparency
-        textPaint.textSize = 10f  * scaleFactor  //Changed from 10f to 12f
+        textPaint.textSize = 15f  * scaleFactor  //Changed from 10f to 12f
         textPaint.alpha = 100  // Added transparency
 
         // Yaw text
@@ -521,7 +539,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         canvas.drawText(
             "Pitch: ${String.format("%.1f", facePose.pitch)}°",
             textX + 10f * scaleFactor,
-            textY - 30f * scaleFactor,
+            textY - 20f * scaleFactor,
             textPaint
         )
 
@@ -530,7 +548,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         canvas.drawText(
             "Roll: ${String.format("%.1f", facePose.roll)}°",
             textX + 10f * scaleFactor,
-            textY- 20f * scaleFactor,
+            textY,
             textPaint
         )
     }
@@ -557,7 +575,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Draw eye circles
         val eyePaint = Paint().apply {
-            color = Color.WHITE
+            color = Color.BLUE
             style = Paint.Style.STROKE
             strokeWidth = 2f * scaleFactor
             isAntiAlias = true
