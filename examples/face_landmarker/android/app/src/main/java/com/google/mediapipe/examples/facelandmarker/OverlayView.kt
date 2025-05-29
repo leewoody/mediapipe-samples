@@ -46,6 +46,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     private val BLINK_DURATION_THRESHOLD = 0.3f  // Seconds
     private val FATIGUE_THRESHOLD = 0.5f      // Threshold for fatigue detection
 
+    private val faceColors = arrayOf(
+        Color.rgb(255, 200, 200),  // Light Red
+        Color.rgb(200, 255, 200),  // Light Green
+        Color.rgb(200, 200, 255),  // Light Blue
+        Color.rgb(255, 255, 200),  // Light Yellow
+        Color.rgb(255, 200, 255)   // Light Purple
+    )
+
     init {
         initPaints()
     }
@@ -70,7 +78,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         pointPaint.style = Paint.Style.FILL
 
         textPaint.color = Color.BLACK
-        textPaint.textSize = 30f
+        textPaint.textSize = 20f
         textPaint.isAntiAlias = true
     }
 
@@ -88,14 +96,52 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             val offsetX = (width - scaledImageWidth) / 2f
             val offsetY = (height - scaledImageHeight) / 2f
 
-            faceLandmarkerResult.faceLandmarks().forEach { faceLandmarks ->
+            // Draw face number indicator
+            textPaint.textSize = 40f
+            canvas.drawText(
+                "Detected Faces: ${faceLandmarkerResult.faceLandmarks().size}",
+                width * 0.05f,  // Position at 5% of screen width
+                50f,
+                textPaint
+            )
+            textPaint.textSize = 30f  // Reset text size
+
+            // Draw information for each face
+            faceLandmarkerResult.faceLandmarks().forEachIndexed { index, faceLandmarks ->
                 // Draw landmarks and connectors
                 drawFaceLandmarks(canvas, faceLandmarks, offsetX, offsetY)
                 drawFaceConnectors(canvas, faceLandmarks, offsetX, offsetY)
 
+                // Draw face number near the face with matching color
+                val noseTip = faceLandmarks[1]  // Nose tip landmark
+                val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
+                val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 50f
+                
+                // Draw colored background for face number
+                val numberBackgroundPaint = Paint().apply {
+                    color = faceColors[index % faceColors.size]
+                    alpha = 180
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRect(
+                    faceNumberX - 10f,
+                    faceNumberY - 30f,
+                    faceNumberX + 100f,
+                    faceNumberY + 10f,
+                    numberBackgroundPaint
+                )
+                
+                textPaint.color = Color.BLACK
+                canvas.drawText(
+                    "Face ${index + 1}",
+                    faceNumberX,
+                    faceNumberY,
+                    textPaint
+                )
+
                 // Analyze and draw face pose information
                 val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
-                drawFacePoseInfo(canvas, facePose, offsetX, offsetY)
+                drawFacePoseInfo(canvas, facePose, offsetX, offsetY, index)
             }
         }
     }
@@ -140,28 +186,59 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         }
     }
 
-    private fun drawFacePoseInfo(canvas: Canvas, facePose: FacePoseAnalyzer.FacePose, offsetX: Float, offsetY: Float) {
-        val textX = 1500f
-        val textY = 50f
+    private fun drawFacePoseInfo(canvas: Canvas, facePose: FacePoseAnalyzer.FacePose, offsetX: Float, offsetY: Float, faceIndex: Int) {
+        // Calculate base text position based on screen width and face index
+        val columnWidth = width * 0.20f  // Each face gets 25% of screen width
+        val baseTextX = width * 0.68f + (columnWidth * faceIndex)  // Start at 75% and increment by column width
+        val baseTextY = 50f
         val lineHeight = 40f
+        val textSpacing = 20f  // Additional spacing between different faces
+
+        // Draw background for face information
+        val backgroundColor = faceColors[faceIndex % faceColors.size]
+        val backgroundPaint = Paint().apply {
+            color = backgroundColor
+            alpha = 180  // Semi-transparent
+            style = Paint.Style.FILL
+        }
+
+        // Draw background rectangle
+        canvas.drawRect(
+            baseTextX - 10f,
+            baseTextY - 30f,
+            baseTextX + columnWidth - 20f,
+            baseTextY + lineHeight * 14f,
+            backgroundPaint
+        )
+
+        // Draw face number header with border
+        textPaint.textSize = 35f
+        textPaint.color = Color.BLACK
+        canvas.drawText(
+            "Face ${faceIndex + 1}",
+            baseTextX,
+            baseTextY,
+            textPaint
+        )
+        textPaint.textSize = 30f  // Reset text size
 
         // Draw head pose angles
-//        canvas.drawText(
-//            "Yaw: ${String.format("%.1f", facePose.yaw)}°",
-//            textX,
-//            textY+ lineHeight * 2,
-//            textPaint
-//        )
         canvas.drawText(
-            "Yaw: ${String.format("%.1f", facePose.yaw)}°,\n " + "Pitch: ${String.format("%.1f", facePose.pitch)}°, \n" ,
-            textX,
-            textY + lineHeight * 3,
+            "Yaw: ${String.format("%.1f", facePose.yaw)}°",
+            baseTextX,
+            baseTextY + lineHeight * 3,
+            textPaint
+        )
+        canvas.drawText(
+            "Pitch: ${String.format("%.1f", facePose.pitch)}°",
+            baseTextX,
+            baseTextY + lineHeight * 4,
             textPaint
         )
         canvas.drawText(
             "Roll: ${String.format("%.1f", facePose.roll)}°",
-            textX,
-            textY + lineHeight * 4,
+            baseTextX,
+            baseTextY + lineHeight * 5,
             textPaint
         )
 
@@ -170,14 +247,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val rightEye = facePose.eyePositions.rightEye
         canvas.drawText(
             "Left Eye: (${String.format("%.2f", leftEye.x)}, ${String.format("%.2f", leftEye.y)})",
-            textX,
-            textY + lineHeight * 5,
+            baseTextX,
+            baseTextY + lineHeight * 6,
             textPaint
         )
         canvas.drawText(
             "Right Eye: (${String.format("%.2f", rightEye.x)}, ${String.format("%.2f", rightEye.y)})",
-            textX,
-            textY + lineHeight * 6,
+            baseTextX,
+            baseTextY + lineHeight * 7,
             textPaint
         )
 
@@ -186,14 +263,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val rightIris = facePose.irisPositions.rightIris
         canvas.drawText(
             "Left Iris: (${String.format("%.2f", leftIris.x)}, ${String.format("%.2f", leftIris.y)})",
-            textX,
-            textY + lineHeight * 7,
+            baseTextX,
+            baseTextY + lineHeight * 8,
             textPaint
         )
         canvas.drawText(
             "Right Iris: (${String.format("%.2f", rightIris.x)}, ${String.format("%.2f", rightIris.y)})",
-            textX,
-            textY + lineHeight * 8,
+            baseTextX,
+            baseTextY + lineHeight * 9,
             textPaint
         )
 
@@ -201,8 +278,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         facePose.screenDistance?.let { distance ->
             canvas.drawText(
                 "Screen Distance: ${String.format("%.2f", distance)}",
-                textX,
-                textY + lineHeight * 9,
+                baseTextX,
+                baseTextY + lineHeight * 10,
                 textPaint
             )
         }
@@ -214,26 +291,26 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
             canvas.drawText(
                 "Eye Openness: ${String.format("%.2f", metrics.averageEyeOpenness)}",
-                textX,
-                textY + lineHeight * 10,
+                baseTextX,
+                baseTextY + lineHeight * 11,
                 textPaint
             )
             canvas.drawText(
                 "Blink Count: ${metrics.blinkCount}",
-                textX,
-                textY + lineHeight * 11,
+                baseTextX,
+                baseTextY + lineHeight * 12,
                 textPaint
             )
             canvas.drawText(
                 "Fatigue Score: ${String.format("%.2f", metrics.fatigueScore)}",
-                textX,
-                textY + lineHeight * 12,
+                baseTextX,
+                baseTextY + lineHeight * 13,
                 textPaint
             )
             canvas.drawText(
                 "Status: ${if (metrics.isFatigued) "FATIGUED" else "ALERT"}",
-                textX,
-                textY + lineHeight * 13,
+                baseTextX,
+                baseTextY + lineHeight * 14,
                 textPaint
             )
 
