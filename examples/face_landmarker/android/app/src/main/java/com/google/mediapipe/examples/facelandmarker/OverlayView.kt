@@ -664,16 +664,16 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val rightEyeY = rightEye.y * imageHeight * scaleFactor + offsetY
 
         // Draw eye circles
-        val eyePaint = Paint().apply {
-            color = Color.BLUE
-            style = Paint.Style.STROKE
-            strokeWidth = 2f * scaleFactor
-            isAntiAlias = true
-        }
+        // val eyePaint = Paint().apply {
+        //     color = Color.BLUE
+        //     style = Paint.Style.STROKE
+        //     strokeWidth = 2f * scaleFactor
+        //     isAntiAlias = true
+        // }
 
-        val eyeRadius = 15f * scaleFactor
-        canvas.drawCircle(leftEyeX, leftEyeY, eyeRadius, eyePaint)
-        canvas.drawCircle(rightEyeX, rightEyeY, eyeRadius, eyePaint)
+        // val eyeRadius = 15f * scaleFactor
+        // canvas.drawCircle(leftEyeX, leftEyeY, eyeRadius, eyePaint)
+        // canvas.drawCircle(rightEyeX, rightEyeY, eyeRadius, eyePaint)
 
         // Draw gaze direction
         val gazePaint = Paint().apply {
