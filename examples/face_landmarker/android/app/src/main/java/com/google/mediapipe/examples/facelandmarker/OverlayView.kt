@@ -181,8 +181,6 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         
         val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
         val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
-        val foreheadX = forehead.x() * imageWidth * scaleFactor + offsetX
-        val foreheadY = forehead.y() * imageHeight * scaleFactor + offsetY
 
         // Calculate face orientation
         val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
@@ -191,45 +189,145 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val yawColor = Color.rgb(255, 100, 100)    // Red for yaw (左右)
         val pitchColor = Color.rgb(100, 255, 100)  // Green for pitch (上下)
         val rollColor = Color.rgb(100, 100, 255)   // Blue for roll (旋轉)
-        
-        // Draw coordinate axes
+
+        // Draw 3D coordinate system
         val axisLength = 100f * scaleFactor
+        val points = calculate3DPoints(facePose.yaw, facePose.pitch, facePose.roll, axisLength)
+        val projectedPoints = project3DPoints(points, noseX, noseY)
+        draw3DAxes(canvas, projectedPoints, yawColor, pitchColor, rollColor)
+
+        // Draw orientation text
+        drawOrientationText(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
+    }
+
+    private fun calculate3DPoints(yaw: Float, pitch: Float, roll: Float, axisLength: Float): Array<FloatArray> {
+        // Convert angles to radians
+        val yawRad = Math.toRadians(yaw.toDouble())
+        val pitchRad = Math.toRadians(pitch.toDouble())
+        val rollRad = Math.toRadians(roll.toDouble())
+
+        // Initial 3D points
+        val points = arrayOf(
+            floatArrayOf(0f, 0f, 0f),                    // Origin
+            floatArrayOf(axisLength, 0f, 0f),            // X-axis
+            floatArrayOf(0f, -axisLength, 0f),           // Y-axis
+            floatArrayOf(0f, 0f, axisLength)             // Z-axis
+        )
+
+        // Apply rotations
+        return points.map { point ->
+            var x = point[0]
+            var y = point[1]
+            var z = point[2]
+            
+            // Roll rotation around Z
+            val rollX = x * Math.cos(rollRad) - y * Math.sin(rollRad)
+            val rollY = x * Math.sin(rollRad) + y * Math.cos(rollRad)
+            x = rollX.toFloat()
+            y = rollY.toFloat()
+            
+            // Pitch rotation around X
+            val pitchY = y * Math.cos(pitchRad) - z * Math.sin(pitchRad)
+            val pitchZ = y * Math.sin(pitchRad) + z * Math.cos(pitchRad)
+            y = pitchY.toFloat()
+            z = pitchZ.toFloat()
+            
+            // Yaw rotation around Y
+            val yawX = x * Math.cos(yawRad) + z * Math.sin(yawRad)
+            val yawZ = -x * Math.sin(yawRad) + z * Math.cos(yawRad)
+            x = yawX.toFloat()
+            z = yawZ.toFloat()
+            
+            floatArrayOf(x, y, z)
+        }.toTypedArray()
+    }
+
+    private fun project3DPoints(points: Array<FloatArray>, centerX: Float, centerY: Float): Array<FloatArray> {
+        return points.map { point ->
+            // Simple perspective projection
+            val scale = 1f / (point[2] + 2f)  // Add offset to prevent division by zero
+            floatArrayOf(
+                point[0] * scale + centerX,
+                point[1] * scale + centerY
+            )
+        }.toTypedArray()
+    }
+
+    private fun draw3DAxes(
+        canvas: Canvas,
+        points: Array<FloatArray>,
+        yawColor: Int,
+        pitchColor: Int,
+        rollColor: Int
+    ) {
         val axisPaint = Paint().apply {
             strokeWidth = 5f
             isAntiAlias = true
         }
 
-        // Save canvas state
-        canvas.save()
-        canvas.translate(noseX, noseY)
-        canvas.rotate(facePose.roll)
-
-        // Draw Yaw axis (red) - horizontal rotation
+        // Draw axes
+        // Yaw axis (red)
         axisPaint.color = yawColor
-        canvas.drawLine(0f, 0f, axisLength, 0f, axisPaint)
-        
-        // Draw Pitch axis (green) - vertical rotation
+        canvas.drawLine(
+            points[0][0], points[0][1],
+            points[1][0], points[1][1],
+            axisPaint
+        )
+
+        // Pitch axis (green)
         axisPaint.color = pitchColor
-        canvas.drawLine(0f, 0f, 0f, -axisLength, axisPaint)
-        
-        // Draw Roll axis (blue) - rotation around Z
+        canvas.drawLine(
+            points[0][0], points[0][1],
+            points[2][0], points[2][1],
+            axisPaint
+        )
+
+        // Roll axis (blue)
         axisPaint.color = rollColor
-        canvas.drawLine(0f, 0f, axisLength * 0.5f, axisLength * 0.5f, axisPaint)
+        canvas.drawLine(
+            points[0][0], points[0][1],
+            points[3][0], points[3][1],
+            axisPaint
+        )
 
-        // Restore canvas state
-        canvas.restore()
+        // Draw axis endpoints
+        val endpointRadius = 8f * scaleFactor
+        val endpointPaint = Paint().apply {
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
 
-        // Draw color-coded orientation text with background
+        // Draw endpoints for each axis
+        endpointPaint.color = yawColor
+        canvas.drawCircle(points[1][0], points[1][1], endpointRadius, endpointPaint)
+        
+        endpointPaint.color = pitchColor
+        canvas.drawCircle(points[2][0], points[2][1], endpointRadius, endpointPaint)
+        
+        endpointPaint.color = rollColor
+        canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+    }
+
+    private fun drawOrientationText(
+        canvas: Canvas,
+        centerX: Float,
+        centerY: Float,
+        facePose: FacePoseAnalyzer.FacePose,
+        yawColor: Int,
+        pitchColor: Int,
+        rollColor: Int
+    ) {
+        // Draw text background
         val textBackgroundPaint = Paint().apply {
-            color = Color.argb(180, 0, 0, 0)  // Semi-transparent black background
+            color = Color.argb(180, 0, 0, 0)
             style = Paint.Style.FILL
         }
 
-        // Draw background for text
-        val textX = noseX - 120f * scaleFactor
-        val textY = noseY - 60f * scaleFactor
+        val textX = centerX - 120f * scaleFactor
+        val textY = centerY - 60f * scaleFactor
         val textWidth = 240f * scaleFactor
         val textHeight = 90f * scaleFactor
+
         canvas.drawRect(
             textX,
             textY - textHeight,
@@ -238,8 +336,10 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             textBackgroundPaint
         )
 
-        // Draw yaw text (red)
+        // Draw text
         textPaint.textSize = 25f * scaleFactor
+
+        // Yaw text
         textPaint.color = yawColor
         canvas.drawText(
             "Yaw: ${String.format("%.1f", facePose.yaw)}°",
@@ -248,7 +348,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             textPaint
         )
 
-        // Draw pitch text (green)
+        // Pitch text
         textPaint.color = pitchColor
         canvas.drawText(
             "Pitch: ${String.format("%.1f", facePose.pitch)}°",
@@ -257,7 +357,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             textPaint
         )
 
-        // Draw roll text (blue)
+        // Roll text
         textPaint.color = rollColor
         canvas.drawText(
             "Roll: ${String.format("%.1f", facePose.roll)}°",
@@ -265,25 +365,6 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             textY,
             textPaint
         )
-
-        // Draw small color indicators next to the axes
-        val indicatorRadius = 8f * scaleFactor
-        val indicatorPaint = Paint().apply {
-            style = Paint.Style.FILL
-            isAntiAlias = true
-        }
-
-        // Yaw indicator (red)
-        indicatorPaint.color = yawColor
-        canvas.drawCircle(noseX + axisLength + 20f * scaleFactor, noseY, indicatorRadius, indicatorPaint)
-
-        // Pitch indicator (green)
-        indicatorPaint.color = pitchColor
-        canvas.drawCircle(noseX, noseY - axisLength - 20f * scaleFactor, indicatorRadius, indicatorPaint)
-
-        // Roll indicator (blue)
-        indicatorPaint.color = rollColor
-        canvas.drawCircle(noseX + axisLength * 0.5f + 20f * scaleFactor, noseY + axisLength * 0.5f + 20f * scaleFactor, indicatorRadius, indicatorPaint)
     }
 
     private fun drawGazeOnFace(
