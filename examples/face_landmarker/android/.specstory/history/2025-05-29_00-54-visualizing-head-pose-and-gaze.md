@@ -699,6 +699,1501 @@ _**Assistant**_
 
 ---
 
+讓我分開修改，先更新軸線的長度和基本視覺效果：
+
+
+---
+
+```diff
+          val projectedPoints = project3DPoints(points, noseX, noseY)
+          draw3DAxes(canvas, projectedPoints, yawColor, pitchColor, rollColor)
+- 
+-         // Draw additional visual cues
+-         drawVisualCues(canvas, noseX, noseY, facePose, projectedPoints, yawColor, pitchColor, rollColor)
+  
+          // Draw orientation text
+          drawOrientationText(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
+      }
+- 
+-     private fun drawVisualCues(
+-         canvas: Canvas,
+-         centerX: Float,
+-         centerY: Float,
+-         facePose: FacePoseAnalyzer.FacePose,
+-         points: Array<FloatArray>,
+-         yawColor: Int,
+-         pitchColor: Int,
+-         rollColor: Int
+-     ) {
+-         // Draw rotation indicators
+-         val indicatorPaint = Paint().apply {
+-             style = Paint.Style.STROKE
+-             strokeWidth = 3f * scaleFactor
+-             isAntiAlias = true
+-         }
+- 
+-         // Draw yaw rotation indicator (horizontal arc)
+-         indicatorPaint.color = yawColor
+-         val yawRadius = 40f * scaleFactor
+-         canvas.drawArc(
+-             centerX - yawRadius,
+-             centerY - yawRadius,
+-             centerX + yawRadius,
+-             centerY + yawRadius,
+-             -90f,
+-             180f,
+-             false,
+-             indicatorPaint
+-         )
+- 
+-         // Draw pitch rotation indicator (vertical arc)
+-         indicatorPaint.color = pitchColor
+-         val pitchRadius = 30f * scaleFactor
+-         canvas.drawArc(
+-             centerX - pitchRadius,
+-             centerY - pitchRadius,
+-             centerX + pitchRadius,
+-             centerY + pitchRadius,
+-             0f,
+-             180f,
+-             false,
+-             indicatorPaint
+-         )
+- 
+-         // Draw roll rotation indicator (circle with line)
+-         indicatorPaint.color = rollColor
+-         val rollRadius = 20f * scaleFactor
+-         canvas.drawCircle(centerX, centerY, rollRadius, indicatorPaint)
+-         canvas.drawLine(
+-             centerX - rollRadius,
+-             centerY,
+-             centerX + rollRadius,
+-             centerY,
+-             indicatorPaint
+-         )
+- 
+-         // Draw axis labels
+-         val labelPaint = Paint().apply {
+-             textSize = 20f * scaleFactor
+-             isAntiAlias = true
+-         }
+- 
+-         // Draw labels for each axis
+-         labelPaint.color = yawColor
+-         canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
+-         
+-         labelPaint.color = pitchColor
+-         canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
+-         
+-         labelPaint.color = rollColor
+-         canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+- 
+-         // Draw direction arrows
+-         val arrowPaint = Paint().apply {
+-             strokeWidth = 4f * scaleFactor
+-             isAntiAlias = true
+-         }
+- 
+-         // Draw arrows for each axis
+-         drawArrow(canvas, points[0], points[1], yawColor, arrowPaint)    // Yaw arrow
+-         drawArrow(canvas, points[0], points[2], pitchColor, arrowPaint)  // Pitch arrow
+-         drawArrow(canvas, points[0], points[3], rollColor, arrowPaint)   // Roll arrow
+-     }
+- 
+-     private fun drawArrow(
+-         canvas: Canvas,
+-         start: FloatArray,
+-         end: FloatArray,
+-         color: Int,
+-         paint: Paint
+-     ) {
+-         paint.color = color
+-         
+-         // Calculate arrow direction
+-         val dx = end[0] - start[0]
+-         val dy = end[1] - start[1]
+-         val length = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+-         
+-         // Calculate arrow head points
+-         val arrowLength = 15f * scaleFactor
+-         val arrowAngle = Math.PI / 6  // 30 degrees
+-         
+-         val angle = Math.atan2(dy.toDouble(), dx.toDouble())
+-         val arrowAngle1 = angle + arrowAngle
+-         val arrowAngle2 = angle - arrowAngle
+-         
+-         val arrowX1 = end[0] - arrowLength * Math.cos(arrowAngle1).toFloat()
+-         val arrowY1 = end[1] - arrowLength * Math.sin(arrowAngle1).toFloat()
+-         val arrowX2 = end[0] - arrowLength * Math.cos(arrowAngle2).toFloat()
+-         val arrowY2 = end[1] - arrowLength * Math.sin(arrowAngle2).toFloat()
+-         
+-         // Draw arrow line
+-         canvas.drawLine(start[0], start[1], end[0], end[1], paint)
+-         
+-         // Draw arrow head
+-         canvas.drawLine(end[0], end[1], arrowX1, arrowY1, paint)
+-         canvas.drawLine(end[0], end[1], arrowX2, arrowY2, paint)
+-     }
+  
+      private fun draw3DAxes(
+```
+
+```diff
+          endpointPaint.color = rollColor
+          canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
++ 
++         // Draw axis labels
++         val labelPaint = Paint().apply {
++             textSize = 20f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         // Draw labels for each axis
++         labelPaint.color = yawColor
++         canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
++         
++         labelPaint.color = pitchColor
++         canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
++         
++         labelPaint.color = rollColor
++         canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+      }
+  
+```
+
+---
+
+現在讓我添加旋轉指示器和箭頭：
+
+
+---
+
+```diff
+          val pitchColor = Color.rgb(100, 255, 100)  // Green for pitch (上下)
+          val rollColor = Color.rgb(100, 100, 255)   // Blue for roll (旋轉)
++ 
++         // Draw rotation indicators
++         drawRotationIndicators(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
+  
+          // Draw 3D coordinate system with increased axis length
+-         val axisLength = 150f * scaleFactor  // Increased from 100f to 150f
++         val axisLength = 150f * scaleFactor
+          val points = calculate3DPoints(facePose.yaw, facePose.pitch, facePose.roll, axisLength)
+          val projectedPoints = project3DPoints(points, noseX, noseY)
+```
+
+```diff
+          drawOrientationText(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
+      }
++ 
++     private fun drawRotationIndicators(
++         canvas: Canvas,
++         centerX: Float,
++         centerY: Float,
++         facePose: FacePoseAnalyzer.FacePose,
++         yawColor: Int,
++         pitchColor: Int,
++         rollColor: Int
++     ) {
++         // Draw rotation indicators
++         val indicatorPaint = Paint().apply {
++             style = Paint.Style.STROKE
++             strokeWidth = 3f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         // Draw yaw rotation indicator (horizontal arc)
++         indicatorPaint.color = yawColor
++         val yawRadius = 40f * scaleFactor
++         canvas.drawArc(
++             centerX - yawRadius,
++             centerY - yawRadius,
++             centerX + yawRadius,
++             centerY + yawRadius,
++             -90f,
++             180f,
++             false,
++             indicatorPaint
++         )
++ 
++         // Draw pitch rotation indicator (vertical arc)
++         indicatorPaint.color = pitchColor
++         val pitchRadius = 30f * scaleFactor
++         canvas.drawArc(
++             centerX - pitchRadius,
++             centerY - pitchRadius,
++             centerX + pitchRadius,
++             centerY + pitchRadius,
++             0f,
++             180f,
++             false,
++             indicatorPaint
++         )
++ 
++         // Draw roll rotation indicator (circle with line)
++         indicatorPaint.color = rollColor
++         val rollRadius = 20f * scaleFactor
++         canvas.drawCircle(centerX, centerY, rollRadius, indicatorPaint)
++         canvas.drawLine(
++             centerX - rollRadius,
++             centerY,
++             centerX + rollRadius,
++             centerY,
++             indicatorPaint
++         )
++ 
++         // Draw rotation arrows
++         val arrowPaint = Paint().apply {
++             strokeWidth = 4f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         // Draw yaw arrow
++         drawRotationArrow(
++             canvas,
++             centerX,
++             centerY,
++             yawRadius,
++             facePose.yaw,
++             yawColor,
++             arrowPaint
++         )
++ 
++         // Draw pitch arrow
++         drawRotationArrow(
++             canvas,
++             centerX,
++             centerY,
++             pitchRadius,
++             facePose.pitch,
++             pitchColor,
++             arrowPaint
++         )
++ 
++         // Draw roll arrow
++         drawRotationArrow(
++             canvas,
++             centerX,
++             centerY,
++             rollRadius,
++             facePose.roll,
++             rollColor,
++             arrowPaint
++         )
++     }
++ 
++     private fun drawRotationArrow(
++         canvas: Canvas,
++         centerX: Float,
++         centerY: Float,
++         radius: Float,
++         angle: Float,
++         color: Int,
++         paint: Paint
++     ) {
++         paint.color = color
++         
++         // Convert angle to radians
++         val angleRad = Math.toRadians(angle.toDouble())
++         
++         // Calculate arrow end point
++         val endX = centerX + radius * Math.cos(angleRad).toFloat()
++         val endY = centerY + radius * Math.sin(angleRad).toFloat()
++         
++         // Calculate arrow head points
++         val arrowLength = 15f * scaleFactor
++         val arrowAngle = Math.PI / 6  // 30 degrees
++         
++         val arrowAngle1 = angleRad + arrowAngle
++         val arrowAngle2 = angleRad - arrowAngle
++         
++         val arrowX1 = endX - arrowLength * Math.cos(arrowAngle1).toFloat()
++         val arrowY1 = endY - arrowLength * Math.sin(arrowAngle1).toFloat()
++         val arrowX2 = endX - arrowLength * Math.cos(arrowAngle2).toFloat()
++         val arrowY2 = endY - arrowLength * Math.sin(arrowAngle2).toFloat()
++         
++         // Draw arrow line
++         canvas.drawLine(centerX, centerY, endX, endY, paint)
++         
++         // Draw arrow head
++         canvas.drawLine(endX, endY, arrowX1, arrowY1, paint)
++         canvas.drawLine(endX, endY, arrowX2, arrowY2, paint)
++     }
+  
+      private fun draw3DAxes(
+```
+
+---
+
+我已經更新了代碼，添加了更多的視覺提示和改進了軸線的顯示效果。主要改進包括：
+
+1. **軸線改進**:
+   - 增加軸線長度到 150f * scaleFactor
+   - 增加軸線粗細到 6f * scaleFactor
+   - 增加端點圓圈半徑到 12f * scaleFactor
+   - 添加漸變效果使軸線更醒目
+
+2. **旋轉指示器**:
+   - 添加水平弧線表示 yaw 旋轉（紅色）
+   - 添加垂直弧線表示 pitch 旋轉（綠色）
+   - 添加圓圈和線段表示 roll 旋轉（藍色）
+
+3. **方向箭頭**:
+   - 為每個旋轉軸添加動態箭頭
+   - 箭頭會根據實際旋轉角度改變方向
+   - 使用對應的顏色標示不同類型的旋轉
+
+4. **視覺效果優化**:
+   - 所有元素都使用抗鋸齒處理
+   - 添加漸變效果增加視覺深度
+   - 文字標籤更清晰易讀
+
+這些改進可以：
+- 更直觀地展示頭部旋轉的方向和角度
+- 提供更多的視覺反饋
+- 使旋轉效果更容易理解
+- 提供更好的深度感知
+
+需要我調整任何部分嗎？例如：
+1. 調整指示器的大小或位置
+2. 修改箭頭的樣式
+3. 改變顏色或透明度
+4. 調整文字標籤的位置
+
+---
+
+_**User**_
+
+facelandmark 跟 head pose visualization 畫大一點
+
+---
+
+_**Assistant**_
+
+我會調整 face landmarks 和 head pose visualization 的大小，讓它們更加明顯。我們可以通過調整 scaleFactor 和相關的尺寸參數來實現。
+
+
+---
+
+```diff
+          offsetY: Float
+      ) {
+-         // Draw all face landmarks
++         // Draw all face landmarks with larger size
++         val landmarkPaint = Paint().apply {
++             color = Color.YELLOW
++             strokeWidth = 8f * scaleFactor  // Increased from default
++             style = Paint.Style.FILL
++             isAntiAlias = true
++         }
++ 
+          faceLandmarks.forEach { landmark ->
+              val x = landmark.x() * imageWidth * scaleFactor + offsetX
+              val y = landmark.y() * imageHeight * scaleFactor + offsetY
+-             canvas.drawPoint(x, y, pointPaint)
++             canvas.drawCircle(x, y, 6f * scaleFactor, landmarkPaint)  // Increased circle radius
+          }
+  
+```
+
+```diff
+          val rollColor = Color.rgb(100, 100, 255)   // Blue for roll (旋轉)
+  
+-         // Draw rotation indicators
++         // Draw rotation indicators with larger size
+          drawRotationIndicators(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
+  
+          // Draw 3D coordinate system with increased axis length
+-         val axisLength = 150f * scaleFactor
++         val axisLength = 200f * scaleFactor  // Increased from 150f to 200f
+          val points = calculate3DPoints(facePose.yaw, facePose.pitch, facePose.roll, axisLength)
+          val projectedPoints = project3DPoints(points, noseX, noseY)
+```
+
+```diff
+          rollColor: Int
+      ) {
+-         // Draw rotation indicators
++         // Draw rotation indicators with larger size
+          val indicatorPaint = Paint().apply {
+              style = Paint.Style.STROKE
+-             strokeWidth = 3f * scaleFactor
++             strokeWidth = 5f * scaleFactor  // Increased from 3f to 5f
+              isAntiAlias = true
+          }
+  
+          // Draw yaw rotation indicator (horizontal arc)
+          indicatorPaint.color = yawColor
+-         val yawRadius = 40f * scaleFactor
++         val yawRadius = 60f * scaleFactor  // Increased from 40f to 60f
+          canvas.drawArc(
+              centerX - yawRadius,
+```
+
+```diff
+          // Draw pitch rotation indicator (vertical arc)
+          indicatorPaint.color = pitchColor
+-         val pitchRadius = 30f * scaleFactor
++         val pitchRadius = 45f * scaleFactor  // Increased from 30f to 45f
+          canvas.drawArc(
+              centerX - pitchRadius,
+```
+
+```diff
+          // Draw roll rotation indicator (circle with line)
+          indicatorPaint.color = rollColor
+-         val rollRadius = 20f * scaleFactor
++         val rollRadius = 30f * scaleFactor  // Increased from 20f to 30f
+          canvas.drawCircle(centerX, centerY, rollRadius, indicatorPaint)
+          canvas.drawLine(
+```
+
+```diff
+          )
+  
+-         // Draw rotation arrows
++         // Draw rotation arrows with larger size
+          val arrowPaint = Paint().apply {
+-             strokeWidth = 4f * scaleFactor
++             strokeWidth = 6f * scaleFactor  // Increased from 4f to 6f
+              isAntiAlias = true
+          }
+```
+
+```diff
+      ) {
+          val axisPaint = Paint().apply {
+-             strokeWidth = 6f * scaleFactor  // Increased from 5f to 6f
++             strokeWidth = 8f * scaleFactor  // Increased from 6f to 8f
+              isAntiAlias = true
+          }
+```
+
+```diff
+  
+          // Draw axis endpoints with larger radius
+-         val endpointRadius = 12f * scaleFactor  // Increased from 8f to 12f
++         val endpointRadius = 16f * scaleFactor  // Increased from 12f to 16f
+          val endpointPaint = Paint().apply {
+              style = Paint.Style.FILL
+```
+
+```diff
+          canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+  
+-         // Draw axis labels
++         // Draw axis labels with larger text
+          val labelPaint = Paint().apply {
+-             textSize = 20f * scaleFactor
++             textSize = 30f * scaleFactor  // Increased from 20f to 30f
+              isAntiAlias = true
+          }
+  
+          // Draw labels for each axis
+          labelPaint.color = yawColor
+-         canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
++         canvas.drawText("Yaw", points[1][0] + 15f * scaleFactor, points[1][1], labelPaint)
+          
+          labelPaint.color = pitchColor
+-         canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
++         canvas.drawText("Pitch", points[2][0], points[2][1] - 15f * scaleFactor, labelPaint)
+          
+          labelPaint.color = rollColor
+-         canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
++         canvas.drawText("Roll", points[3][0] + 15f * scaleFactor, points[3][1] + 15f * scaleFactor, labelPaint)
+      }
+  
+```
+
+---
+
+我已經調整了所有視覺元素的大小，主要改進包括：
+
+1. **Face Landmarks 改進**:
+   - 將點改為圓圈，半徑增加到 6f * scaleFactor
+   - 使用黃色填充，更容易看見
+   - 增加線條粗細到 8f * scaleFactor
+
+2. **Head Pose 軸線改進**:
+   - 軸線長度增加到 200f * scaleFactor
+   - 軸線粗細增加到 8f * scaleFactor
+   - 端點圓圈半徑增加到 16f * scaleFactor
+
+3. **旋轉指示器改進**:
+   - Yaw 指示器半徑增加到 60f * scaleFactor
+   - Pitch 指示器半徑增加到 45f * scaleFactor
+   - Roll 指示器半徑增加到 30f * scaleFactor
+   - 線條粗細增加到 5f * scaleFactor
+
+4. **箭頭和文字改進**:
+   - 箭頭粗細增加到 6f * scaleFactor
+   - 文字大小增加到 30f * scaleFactor
+   - 文字間距增加到 15f * scaleFactor
+
+這些改進可以：
+- 使所有視覺元素更加明顯
+- 提高可讀性
+- 更好地展示頭部姿態
+- 使標記點更容易看見
+
+需要我進一步調整任何部分嗎？例如：
+1. 再增加某些元素的大小
+2. 調整顏色或透明度
+3. 修改文字位置
+4. 調整指示器的形狀
+
+---
+
+_**User**_
+
+Face Landmarks 改進:點改為小一點, 越小越好, 使用黃色透明, 線條細一點
+
+---
+
+_**Assistant**_
+
+我會調整 Face Landmarks 的顯示效果，讓點更小、更細緻，並使用半透明的黃色。
+
+
+---
+
+Cancelled
+
+---
+
+_**User**_
+
+Face Landmarks 改進:點改為小一點, 越小越好, 使用黃色半透明, 線條細一點
+旋轉指示器改進:線條細, 半透明
+箭頭和文字改進:箭頭細, 文字小,半透明
+
+---
+
+_**Assistant**_
+
+我會調整所有視覺元素，讓它們更細緻、更輕盈，使用半透明效果。
+
+
+---
+
+```diff
+          offsetY: Float
+      ) {
+-         // Draw all face landmarks with larger size
++         // Draw all face landmarks with smaller size and transparency
+          val landmarkPaint = Paint().apply {
+-             color = Color.YELLOW
+-             strokeWidth = 8f * scaleFactor  // Increased from default
++             color = Color.argb(180, 255, 255, 0)  // Semi-transparent yellow
++             strokeWidth = 2f * scaleFactor  // Thinner lines
+              style = Paint.Style.FILL
+              isAntiAlias = true
+```
+
+```diff
+              val x = landmark.x() * imageWidth * scaleFactor + offsetX
+              val y = landmark.y() * imageHeight * scaleFactor + offsetY
+-             canvas.drawCircle(x, y, 6f * scaleFactor, landmarkPaint)  // Increased circle radius
++             canvas.drawCircle(x, y, 2f * scaleFactor, landmarkPaint)  // Smaller points
+          }
+  
+```
+
+```diff
+          rollColor: Int
+      ) {
+-         // Draw rotation indicators with larger size
++         // Draw rotation indicators with thinner lines and transparency
+          val indicatorPaint = Paint().apply {
+              style = Paint.Style.STROKE
+-             strokeWidth = 5f * scaleFactor  // Increased from 3f to 5f
++             strokeWidth = 2f * scaleFactor  // Thinner lines
+              isAntiAlias = true
+          }
+  
+          // Draw yaw rotation indicator (horizontal arc)
+-         indicatorPaint.color = yawColor
+-         val yawRadius = 60f * scaleFactor  // Increased from 40f to 60f
++         indicatorPaint.color = Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         val yawRadius = 60f * scaleFactor
+          canvas.drawArc(
+              centerX - yawRadius,
+```
+
+```diff
+  
+          // Draw pitch rotation indicator (vertical arc)
+-         indicatorPaint.color = pitchColor
+-         val pitchRadius = 45f * scaleFactor  // Increased from 30f to 45f
++         indicatorPaint.color = Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         val pitchRadius = 45f * scaleFactor
+          canvas.drawArc(
+              centerX - pitchRadius,
+```
+
+```diff
+  
+          // Draw roll rotation indicator (circle with line)
+-         indicatorPaint.color = rollColor
+-         val rollRadius = 30f * scaleFactor  // Increased from 20f to 30f
++         indicatorPaint.color = Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         val rollRadius = 30f * scaleFactor
+          canvas.drawCircle(centerX, centerY, rollRadius, indicatorPaint)
+          canvas.drawLine(
+```
+
+```diff
+          )
+  
+-         // Draw rotation arrows with larger size
++         // Draw rotation arrows with thinner lines
+          val arrowPaint = Paint().apply {
+-             strokeWidth = 6f * scaleFactor  // Increased from 4f to 6f
++             strokeWidth = 2f * scaleFactor  // Thinner lines
+              isAntiAlias = true
+          }
+```
+
+```diff
+              yawRadius,
+              facePose.yaw,
+-             yawColor,
++             Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)),
+              arrowPaint
+          )
+```
+
+```diff
+              pitchRadius,
+              facePose.pitch,
+-             pitchColor,
++             Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)),
+              arrowPaint
+          )
+```
+
+```diff
+              rollRadius,
+              facePose.roll,
+-             rollColor,
++             Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)),
+              arrowPaint
+          )
+```
+
+```diff
+      ) {
+          val axisPaint = Paint().apply {
+-             strokeWidth = 8f * scaleFactor  // Increased from 6f to 8f
++             strokeWidth = 2f * scaleFactor  // Thinner lines
+              isAntiAlias = true
+          }
+```
+
+```diff
+          }
+  
+-         // Draw each axis with gradient
+-         drawGradientAxis(canvas, points[0], points[1], yawColor, axisPaint, gradientPaint)
+-         drawGradientAxis(canvas, points[0], points[2], pitchColor, axisPaint, gradientPaint)
+-         drawGradientAxis(canvas, points[0], points[3], rollColor, axisPaint, gradientPaint)
++         // Draw each axis with gradient and transparency
++         drawGradientAxis(canvas, points[0], points[1], Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)), axisPaint, gradientPaint)
++         drawGradientAxis(canvas, points[0], points[2], Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)), axisPaint, gradientPaint)
++         drawGradientAxis(canvas, points[0], points[3], Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)), axisPaint, gradientPaint)
+  
+-         // Draw axis endpoints with larger radius
+-         val endpointRadius = 16f * scaleFactor  // Increased from 12f to 16f
++         // Draw axis endpoints with smaller radius
++         val endpointRadius = 4f * scaleFactor  // Smaller endpoints
+          val endpointPaint = Paint().apply {
+              style = Paint.Style.FILL
+              isAntiAlias = true
+          }
+  
+-         // Draw endpoints for each axis
+-         endpointPaint.color = yawColor
++         // Draw endpoints for each axis with transparency
++         endpointPaint.color = Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawCircle(points[1][0], points[1][1], endpointRadius, endpointPaint)
+          
+-         endpointPaint.color = pitchColor
++         endpointPaint.color = Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawCircle(points[2][0], points[2][1], endpointRadius, endpointPaint)
+          
+-         endpointPaint.color = rollColor
++         endpointPaint.color = Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+  
+-         // Draw axis labels with larger text
++         // Draw axis labels with smaller text and transparency
+          val labelPaint = Paint().apply {
+-             textSize = 30f * scaleFactor  // Increased from 20f to 30f
++             textSize = 20f * scaleFactor  // Smaller text
+              isAntiAlias = true
+          }
+  
+          // Draw labels for each axis
+-         labelPaint.color = yawColor
+-         canvas.drawText("Yaw", points[1][0] + 15f * scaleFactor, points[1][1], labelPaint)
++         labelPaint.color = Color.argb(180, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
+          
+-         labelPaint.color = pitchColor
+-         canvas.drawText("Pitch", points[2][0], points[2][1] - 15f * scaleFactor, labelPaint)
++         labelPaint.color = Color.argb(180, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
+          
+-         labelPaint.color = rollColor
+-         canvas.drawText("Roll", points[3][0] + 15f * scaleFactor, points[3][1] + 15f * scaleFactor, labelPaint)
++         labelPaint.color = Color.argb(180, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+      }
+  
+```
+
+```diff
+          rollColor: Int
+      ) {
+-         // Draw text background
++         // Draw text background with more transparency
+          val textBackgroundPaint = Paint().apply {
+-             color = Color.argb(180, 0, 0, 0)
++             color = Color.argb(120, 0, 0, 0)  // More transparent background
+              style = Paint.Style.FILL
+          }
+```
+
+```diff
+          )
+  
+-         // Draw text
+-         textPaint.textSize = 25f * scaleFactor
++         // Draw text with smaller size and transparency
++         textPaint.textSize = 20f * scaleFactor  // Smaller text
+  
+          // Yaw text
+-         textPaint.color = yawColor
++         textPaint.color = Color.argb(180, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawText(
+              "Yaw: ${String.format("%.1f", facePose.yaw)}°",
+```
+
+```diff
+  
+          // Pitch text
+-         textPaint.color = pitchColor
++         textPaint.color = Color.argb(180, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawText(
+              "Pitch: ${String.format("%.1f", facePose.pitch)}°",
+```
+
+```diff
+  
+          // Roll text
+-         textPaint.color = rollColor
++         textPaint.color = Color.argb(180, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawText(
+              "Roll: ${String.format("%.1f", facePose.roll)}°",
+```
+
+---
+
+我已經更新了所有視覺元素，使其更加細緻和輕盈。主要的改進包括：
+
+1. 臉部特徵點（Face Landmarks）：
+   - 點的大小從 6f 減小到 2f
+   - 使用半透明黃色（alpha = 180）
+   - 線條寬度從 8f 減小到 2f
+
+2. 旋轉指示器：
+   - 線條寬度從 5f 減小到 2f
+   - 所有元素使用半透明效果（alpha = 150）
+   - 保持原有的圓弧和圓形指示器，但更加輕盈
+
+3. 3D 座標軸：
+   - 軸線寬度從 8f 減小到 2f
+   - 端點圓圈半徑從 16f 減小到 4f
+   - 所有元素使用半透明效果（alpha = 150）
+
+4. 文字和箭頭：
+   - 文字大小從 25f-30f 減小到 20f
+   - 文字使用半透明效果（alpha = 180）
+   - 箭頭線條寬度從 6f 減小到 2f
+   - 文字背景更透明（alpha = 120）
+
+這些改變使得視覺效果更加精緻和專業，同時保持了良好的可讀性。所有元素都使用了適當的半透明效果，使得重疊的部分也能清晰可見。需要我調整任何具體的參數嗎？
+
+---
+
+_**User**_
+
+臉部特徵點（Face Landmarks）：
+點的大小從 6f 減小到 1f
+使用半透明黃色（alpha = 180）
+線條寬度從 8f 減小到 1f
+旋轉指示器：
+線條寬度從 5f 減小到 1f
+所有元素使用幾乎不透明效果
+3D 座標軸：
+軸線寬度從 8f 減小到 1f
+端點圓圈半徑從 16f 減小到 6f
+所有元素使用幾乎不透明效果
+文字和箭頭：
+文字大小從 25f-30f 減小到 10f
+文字使用幾乎不透明效果
+箭頭線條寬度從 6f 減小到 2f
+文字背景幾乎不透明
+
+---
+
+_**Assistant**_
+
+我會根據您的要求調整所有視覺元素的大小和透明度。
+
+
+---
+
+```diff
+          val landmarkPaint = Paint().apply {
+              color = Color.argb(180, 255, 255, 0)  // Semi-transparent yellow
+-             strokeWidth = 2f * scaleFactor  // Thinner lines
++             strokeWidth = 1f * scaleFactor  // Thinner lines
+              style = Paint.Style.FILL
+              isAntiAlias = true
+```
+
+```diff
+              val x = landmark.x() * imageWidth * scaleFactor + offsetX
+              val y = landmark.y() * imageHeight * scaleFactor + offsetY
+-             canvas.drawCircle(x, y, 2f * scaleFactor, landmarkPaint)  // Smaller points
++             canvas.drawCircle(x, y, 1f * scaleFactor, landmarkPaint)  // Smaller points
+          }
+  
+```
+
+```diff
+          rollColor: Int
+      ) {
+-         // Draw rotation indicators with thinner lines and transparency
++         // Draw rotation indicators with thinner lines and high opacity
+          val indicatorPaint = Paint().apply {
+              style = Paint.Style.STROKE
+-             strokeWidth = 2f * scaleFactor  // Thinner lines
++             strokeWidth = 1f * scaleFactor  // Thinner lines
+              isAntiAlias = true
+          }
+  
+          // Draw yaw rotation indicator (horizontal arc)
+-         indicatorPaint.color = Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         indicatorPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          val yawRadius = 60f * scaleFactor
+          canvas.drawArc(
+```
+
+```diff
+  
+          // Draw pitch rotation indicator (vertical arc)
+-         indicatorPaint.color = Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         indicatorPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          val pitchRadius = 45f * scaleFactor
+          canvas.drawArc(
+```
+
+```diff
+  
+          // Draw roll rotation indicator (circle with line)
+-         indicatorPaint.color = Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         indicatorPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          val rollRadius = 30f * scaleFactor
+          canvas.drawCircle(centerX, centerY, rollRadius, indicatorPaint)
+```
+
+```diff
+          // Draw rotation arrows with thinner lines
+          val arrowPaint = Paint().apply {
+-             strokeWidth = 2f * scaleFactor  // Thinner lines
++             strokeWidth = 1f * scaleFactor  // Thinner lines
+              isAntiAlias = true
+          }
+```
+
+```diff
+              yawRadius,
+              facePose.yaw,
+-             Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)),
++             Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)),
+              arrowPaint
+          )
+```
+
+```diff
+              pitchRadius,
+              facePose.pitch,
+-             Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)),
++             Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)),
+              arrowPaint
+          )
+```
+
+```diff
+              rollRadius,
+              facePose.roll,
+-             Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)),
++             Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)),
+              arrowPaint
+          )
+```
+
+```diff
+      ) {
+          val axisPaint = Paint().apply {
+-             strokeWidth = 2f * scaleFactor  // Thinner lines
++             strokeWidth = 1f * scaleFactor  // Thinner lines
+              isAntiAlias = true
+          }
+```
+
+```diff
+          }
+  
+-         // Draw each axis with gradient and transparency
+-         drawGradientAxis(canvas, points[0], points[1], Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)), axisPaint, gradientPaint)
+-         drawGradientAxis(canvas, points[0], points[2], Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)), axisPaint, gradientPaint)
+-         drawGradientAxis(canvas, points[0], points[3], Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)), axisPaint, gradientPaint)
++         // Draw each axis with gradient and high opacity
++         drawGradientAxis(canvas, points[0], points[1], Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)), axisPaint, gradientPaint)
++         drawGradientAxis(canvas, points[0], points[2], Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)), axisPaint, gradientPaint)
++         drawGradientAxis(canvas, points[0], points[3], Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)), axisPaint, gradientPaint)
+  
+          // Draw axis endpoints with smaller radius
+-         val endpointRadius = 4f * scaleFactor  // Smaller endpoints
++         val endpointRadius = 6f * scaleFactor  // Smaller endpoints
+          val endpointPaint = Paint().apply {
+              style = Paint.Style.FILL
+              isAntiAlias = true
+          }
+  
+-         // Draw endpoints for each axis with transparency
+-         endpointPaint.color = Color.argb(150, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         // Draw endpoints for each axis with high opacity
++         endpointPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawCircle(points[1][0], points[1][1], endpointRadius, endpointPaint)
+          
+-         endpointPaint.color = Color.argb(150, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         endpointPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawCircle(points[2][0], points[2][1], endpointRadius, endpointPaint)
+          
+-         endpointPaint.color = Color.argb(150, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         endpointPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+  
+-         // Draw axis labels with smaller text and transparency
++         // Draw axis labels with smaller text and high opacity
+          val labelPaint = Paint().apply {
+-             textSize = 20f * scaleFactor  // Smaller text
++             textSize = 10f * scaleFactor  // Smaller text
+              isAntiAlias = true
+          }
+  
+          // Draw labels for each axis
+-         labelPaint.color = Color.argb(180, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         labelPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
+          
+-         labelPaint.color = Color.argb(180, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         labelPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
+          
+-         labelPaint.color = Color.argb(180, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         labelPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+      }
+```
+
+```diff
+          rollColor: Int
+      ) {
+-         // Draw text background with more transparency
++         // Draw text background with high opacity
+          val textBackgroundPaint = Paint().apply {
+-             color = Color.argb(120, 0, 0, 0)  // More transparent background
++             color = Color.argb(240, 0, 0, 0)  // High opacity background
+              style = Paint.Style.FILL
+          }
+```
+
+```diff
+          )
+  
+-         // Draw text with smaller size and transparency
+-         textPaint.textSize = 20f * scaleFactor  // Smaller text
++         // Draw text with smaller size and high opacity
++         textPaint.textSize = 10f * scaleFactor  // Smaller text
+  
+          // Yaw text
+-         textPaint.color = Color.argb(180, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         textPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawText(
+              "Yaw: ${String.format("%.1f", facePose.yaw)}°",
+```
+
+```diff
+  
+          // Pitch text
+-         textPaint.color = Color.argb(180, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         textPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawText(
+              "Pitch: ${String.format("%.1f", facePose.pitch)}°",
+```
+
+```diff
+  
+          // Roll text
+-         textPaint.color = Color.argb(180, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         textPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawText(
+              "Roll: ${String.format("%.1f", facePose.roll)}°",
+```
+
+---
+
+我已經根據您的要求更新了所有視覺元素。主要的改進包括：
+
+1. 臉部特徵點（Face Landmarks）：
+   - 點的大小從 2f 減小到 1f
+   - 保持半透明黃色（alpha = 180）
+   - 線條寬度從 2f 減小到 1f
+
+2. 旋轉指示器：
+   - 線條寬度從 2f 減小到 1f
+   - 所有元素使用高不透明度（alpha = 240）
+   - 包括圓弧、圓形和箭頭
+
+3. 3D 座標軸：
+   - 軸線寬度從 2f 減小到 1f
+   - 端點圓圈半徑從 4f 增加到 6f
+   - 所有元素使用高不透明度（alpha = 240）
+
+4. 文字和箭頭：
+   - 文字大小從 20f 減小到 10f
+   - 文字使用高不透明度（alpha = 240）
+   - 箭頭線條寬度從 2f 減小到 1f
+   - 文字背景使用高不透明度（alpha = 240）
+
+這些改變使得視覺效果更加精緻和清晰，同時保持了良好的可讀性。所有元素都使用了適當的不透明度，使得重疊的部分也能清晰可見。需要我調整任何具體的參數嗎？
+
+---
+
+_**User**_
+
+scaleFactor 不要太小
+3D 座標軸：
+軸線寬度 2f 
+端點圓圈半徑從 4f 增加到 10f
+
+文字和箭頭：
+文字大小從 20f 減小到 12f
+文字使用透明度（alpha = 140）
+箭頭線條寬度 2f 
+文字背景使用透明度（alpha = 140）
+
+---
+
+_**Assistant**_
+
+I'll help you modify the code to adjust these visual elements. I'll make the changes to the relevant parts of the code.
+
+Let me edit the file to implement these changes:
+
+
+---
+
+```diff
+      private val facePoseAnalyzer = FacePoseAnalyzer()
+  
+-     private var scaleFactor: Float = 1f
++     private var scaleFactor: Float = 1.5f
+      private var imageWidth: Int = 1
+      private var imageHeight: Int = 1
+```
+
+```diff
+      ) {
+          paint.color = color
++         paint.strokeWidth = 2f * scaleFactor  // Changed to 2f
+          
+          // Convert angle to radians
+```
+
+```diff
+      ) {
+          val axisPaint = Paint().apply {
+-             strokeWidth = 1f * scaleFactor  // Thinner lines
++             strokeWidth = 2f * scaleFactor  // Changed from 1f to 2f
+              isAntiAlias = true
+          }
+```
+
+```diff
+          drawGradientAxis(canvas, points[0], points[3], Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)), axisPaint, gradientPaint)
+  
+-         // Draw axis endpoints with smaller radius
+-         val endpointRadius = 6f * scaleFactor  // Smaller endpoints
++         // Draw axis endpoints with larger radius
++         val endpointRadius = 10f * scaleFactor  // Changed from 6f to 10f
+          val endpointPaint = Paint().apply {
+              style = Paint.Style.FILL
+```
+
+```diff
+          canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+  
+-         // Draw axis labels with smaller text and high opacity
++         // Draw axis labels with smaller text and transparency
+          val labelPaint = Paint().apply {
+-             textSize = 10f * scaleFactor  // Smaller text
++             textSize = 12f * scaleFactor  // Changed from 10f to 12f
+              isAntiAlias = true
++             alpha = 140  // Added transparency
+          }
+  
+          // Draw labels for each axis
+-         labelPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         labelPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
+          
+-         labelPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         labelPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
+          
+-         labelPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         labelPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+      }
+```
+
+```diff
+          rollColor: Int
+      ) {
+-         // Draw text background with high opacity
++         // Draw text background with transparency
+          val textBackgroundPaint = Paint().apply {
+-             color = Color.argb(240, 0, 0, 0)  // High opacity background
++             color = Color.argb(140, 0, 0, 0)  // Changed alpha to 140
+              style = Paint.Style.FILL
+          }
+```
+
+```diff
+          )
+  
+-         // Draw text with smaller size and high opacity
+-         textPaint.textSize = 10f * scaleFactor  // Smaller text
++         // Draw text with smaller size and transparency
++         textPaint.textSize = 12f * scaleFactor  // Changed from 10f to 12f
++         textPaint.alpha = 140  // Added transparency
+  
+          // Yaw text
+-         textPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
++         textPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawText(
+              "Yaw: ${String.format("%.1f", facePose.yaw)}°",
+```
+
+```diff
+  
+          // Pitch text
+-         textPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
++         textPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+          canvas.drawText(
+              "Pitch: ${String.format("%.1f", facePose.pitch)}°",
+```
+
+```diff
+  
+          // Roll text
+-         textPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
++         textPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+          canvas.drawText(
+              "Roll: ${String.format("%.1f", facePose.roll)}°",
+```
+
+---
+
+I've made all the requested changes to the code:
+
+1. Increased the `scaleFactor` from 1f to 1.5f to make everything larger
+2. For 3D coordinate axes:
+   - Changed axis line width from 1f to 2f
+   - Increased endpoint circle radius from 6f to 10f
+3. For text and arrows:
+   - Changed text size from 10f to 12f
+   - Added transparency (alpha = 140) to all text elements
+   - Changed arrow line width to 2f
+   - Changed text background transparency to alpha = 140
+
+The changes have been applied successfully. The visual elements should now be more prominent and have better transparency settings. The text should be more readable with the increased size and the coordinate axes should be more visible with the thicker lines and larger endpoints.
+
+Would you like me to make any additional adjustments to these visual elements?
+
+---
+
+_**User**_
+
+facemesh跟visual elements 太小, 看不清楚, 放大
+
+---
+
+_**Assistant**_
+
+To make the facemesh and all visual elements (landmarks, connectors, axes, text, arrows, etc.) larger and clearer, you should:
+
+1. **Increase `scaleFactor`** (which you already set to 3.5f, good!).
+2. **Increase the size of all visual elements**:
+   - Landmarks (points/circles)
+   - Connectors (lines)
+   - 3D axes (lines and endpoints)
+   - Text (font size)
+   - Arrows (line width and arrowhead size)
+   - Eye/gaze circles and lines
+
+I'll update the code to further increase the size of these elements, making sure they scale with `scaleFactor` and are clearly visible.
+
+**Key changes:**
+- Landmarks: radius from `1f * scaleFactor` → `3f * scaleFactor`
+- Connectors: stroke width from `LANDMARK_STROKE_WIDTH` → `6f * scaleFactor`
+- 3D axes: keep at `2f * scaleFactor` (already thick), endpoints at `16f * scaleFactor`
+- Text: font size from `12f * scaleFactor` → `20f * scaleFactor`
+- Arrows: line width from `2f * scaleFactor` → `4f * scaleFactor`, arrowhead size from `15f * scaleFactor` → `30f * scaleFactor`
+- Eye/gaze: eye radius from `15f * scaleFactor` → `30f * scaleFactor`, gaze line width from `3f * scaleFactor` → `6f * scaleFactor`
+
+Let me make these changes for you.
+
+---
+
+```diff
+          offsetY: Float
+      ) {
+-         // Draw all face landmarks with smaller size and transparency
++         // Draw all face landmarks with larger size and transparency
+          val landmarkPaint = Paint().apply {
+              color = Color.argb(180, 255, 255, 0)  // Semi-transparent yellow
+-             strokeWidth = 1f * scaleFactor  // Thinner lines
++             strokeWidth = 3f * scaleFactor  // Thicker lines
+              style = Paint.Style.FILL
+              isAntiAlias = true
+```
+
+```diff
+              val x = landmark.x() * imageWidth * scaleFactor + offsetX
+              val y = landmark.y() * imageHeight * scaleFactor + offsetY
+-             canvas.drawCircle(x, y, 1f * scaleFactor, landmarkPaint)  // Smaller points
++             canvas.drawCircle(x, y, 3f * scaleFactor, landmarkPaint)  // Larger points
+          }
+  
+```
+
+```diff
+      ) {
+          paint.color = color
+-         paint.strokeWidth = 2f * scaleFactor  // Changed to 2f
++         paint.strokeWidth = 4f * scaleFactor  // Thicker arrow
+          
+          // Convert angle to radians
+```
+
+```diff
+          
+          // Calculate arrow head points
+-         val arrowLength = 15f * scaleFactor
++         val arrowLength = 30f * scaleFactor  // Larger arrowhead
+          val arrowAngle = Math.PI / 6  // 30 degrees
+          
+```
+
+```diff
+      ) {
+          val axisPaint = Paint().apply {
+-             strokeWidth = 2f * scaleFactor  // Changed from 1f to 2f
++             strokeWidth = 2f * scaleFactor  // Already thick
+              isAntiAlias = true
+          }
+```
+
+```diff
+          drawGradientAxis(canvas, points[0], points[3], Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)), axisPaint, gradientPaint)
+  
+-         // Draw axis endpoints with larger radius
+-         val endpointRadius = 10f * scaleFactor  // Changed from 6f to 10f
++         // Draw axis endpoints with much larger radius
++         val endpointRadius = 16f * scaleFactor  // Larger endpoints
+          val endpointPaint = Paint().apply {
+              style = Paint.Style.FILL
+```
+
+```diff
+          canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+  
+-         // Draw axis labels with smaller text and transparency
++         // Draw axis labels with much larger text and transparency
+          val labelPaint = Paint().apply {
+-             textSize = 12f * scaleFactor  // Changed from 10f to 12f
++             textSize = 20f * scaleFactor  // Larger text
+              isAntiAlias = true
+-             alpha = 140  // Added transparency
++             alpha = 140  // Transparency
+          }
+  
+          // Draw labels for each axis
+          labelPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+-         canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
++         canvas.drawText("Yaw", points[1][0] + 16f * scaleFactor, points[1][1], labelPaint)
+          
+          labelPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+-         canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
++         canvas.drawText("Pitch", points[2][0], points[2][1] - 16f * scaleFactor, labelPaint)
+          
+          labelPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+-         canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
++         canvas.drawText("Roll", points[3][0] + 16f * scaleFactor, points[3][1] + 16f * scaleFactor, labelPaint)
+      }
+  
+```
+
+```diff
+          // Draw text background with transparency
+          val textBackgroundPaint = Paint().apply {
+-             color = Color.argb(140, 0, 0, 0)  // Changed alpha to 140
++             color = Color.argb(140, 0, 0, 0)  // Transparency
+              style = Paint.Style.FILL
+          }
+```
+
+```diff
+          val textY = centerY - 60f * scaleFactor
+          val textWidth = 240f * scaleFactor
+-         val textHeight = 90f * scaleFactor
++         val textHeight = 120f * scaleFactor
+  
+          canvas.drawRect(
+```
+
+```diff
+          )
+  
+-         // Draw text with smaller size and transparency
+-         textPaint.textSize = 12f * scaleFactor  // Changed from 10f to 12f
+-         textPaint.alpha = 140  // Added transparency
++         // Draw text with much larger size and transparency
++         textPaint.textSize = 20f * scaleFactor  // Larger text
++         textPaint.alpha = 140  // Transparency
+  
+          // Yaw text
+          textPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+          canvas.drawText(
+              "Yaw: ${String.format("%.1f", facePose.yaw)}°",
+-             textX + 10f * scaleFactor,
+-             textY - 40f * scaleFactor,
++             textX + 20f * scaleFactor,
++             textY - 80f * scaleFactor,
+              textPaint
+          )
+```
+
+```diff
+          canvas.drawText(
+              "Pitch: ${String.format("%.1f", facePose.pitch)}°",
+-             textX + 10f * scaleFactor,
+-             textY - 20f * scaleFactor,
++             textX + 20f * scaleFactor,
++             textY - 50f * scaleFactor,
+              textPaint
+          )
+```
+
+```diff
+          canvas.drawText(
+              "Roll: ${String.format("%.1f", facePose.roll)}°",
+-             textX + 10f * scaleFactor,
+-             textY,
++             textX + 20f * scaleFactor,
++             textY - 20f * scaleFactor,
+              textPaint
+          )
+```
+
+```diff
+              color = Color.WHITE
+              style = Paint.Style.STROKE
+-             strokeWidth = 3f * scaleFactor
++             strokeWidth = 6f * scaleFactor  // Thicker
+              isAntiAlias = true
+          }
+  
+-         val eyeRadius = 15f * scaleFactor
++         val eyeRadius = 30f * scaleFactor  // Larger
+          canvas.drawCircle(leftEyeX, leftEyeY, eyeRadius, eyePaint)
+          canvas.drawCircle(rightEyeX, rightEyeY, eyeRadius, eyePaint)
+```
+
+```diff
+          val gazePaint = Paint().apply {
+              color = Color.YELLOW
+-             strokeWidth = 3f * scaleFactor
++             strokeWidth = 6f * scaleFactor  // Thicker
+              isAntiAlias = true
+          }
+  
+-         val gazeLength = 50f * scaleFactor
++         val gazeLength = 100f * scaleFactor  // Longer
+          canvas.drawLine(
+              leftEyeX,
+```
+
+```diff
+          offsetY: Float
+      ) {
++         val connectorPaint = Paint(linePaint)
++         connectorPaint.strokeWidth = 6f * scaleFactor  // Thicker connectors
+          FaceLandmarker.FACE_LANDMARKS_CONNECTORS.filterNotNull().forEach { connector ->
+              val startLandmark = faceLandmarks.getOrNull(connector.start())
+```
+
+```diff
+                  val endY = endLandmark.y() * imageHeight * scaleFactor + offsetY
+  
+-                 canvas.drawLine(startX, startY, endX, endY, linePaint)
++                 canvas.drawLine(startX, startY, endX, endY, connectorPaint)
+              }
+          }
+```
+
+---
+
+All facemesh and visual elements have now been **significantly enlarged** for clarity:
+
+- **Landmarks**: Points are now much larger.
+- **Connectors**: Lines are much thicker.
+- **3D Axes**: Endpoints and labels are much larger.
+- **Text**: Font size is much bigger and more readable.
+- **Arrows**: Thicker lines and larger arrowheads.
+- **Eye/Gaze**: Eye circles and gaze lines are much larger and thicker.
+
+With your current `scaleFactor = 3.5f`, these changes will make all overlays and mesh elements highly visible and clear, even on high-resolution or large displays.
+
+If you need further fine-tuning (e.g., only some elements larger, or want to adjust colors), just let me know!
+
+---
+
+_**User**_
+
+端點圓圈半徑小一半, roll 旋轉 改為 深藍色, scaleFactor 考慮到 IMAGE, VIDEO 放大兩倍
+
+---
+
+_**Assistant**_
+
 
 
 ---

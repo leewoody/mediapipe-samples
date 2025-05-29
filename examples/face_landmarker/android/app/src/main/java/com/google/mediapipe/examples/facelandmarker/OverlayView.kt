@@ -38,7 +38,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     private var textPaint = Paint()
     private val facePoseAnalyzer = FacePoseAnalyzer()
 
-    private var scaleFactor: Float = 1f
+    private var scaleFactor: Float = 3.5f
     private var imageWidth: Int = 1
     private var imageHeight: Int = 1
 
@@ -115,7 +115,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 // Draw face number near the face with matching color
                 val noseTip = faceLandmarks[1]  // Nose tip landmark
                 val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
-                val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 50f
+                val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 150f
                 
                 // Draw colored background for face number
                 val numberBackgroundPaint = Paint().apply {
@@ -155,11 +155,18 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         offsetX: Float,
         offsetY: Float
     ) {
-        // Draw all face landmarks
+        // Draw all face landmarks with smaller size and transparency
+        val landmarkPaint = Paint().apply {
+            color = Color.argb(180, 255, 255, 0)  // Semi-transparent yellow
+            strokeWidth = 1f * scaleFactor  // Thinner lines
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+
         faceLandmarks.forEach { landmark ->
             val x = landmark.x() * imageWidth * scaleFactor + offsetX
             val y = landmark.y() * imageHeight * scaleFactor + offsetY
-            canvas.drawPoint(x, y, pointPaint)
+            canvas.drawCircle(x, y, 1f * scaleFactor, landmarkPaint)  // Smaller points
         }
 
         // Draw head pose axes on the face
@@ -188,10 +195,13 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // Define colors for each rotation axis
         val yawColor = Color.rgb(255, 100, 100)    // Red for yaw (左右)
         val pitchColor = Color.rgb(100, 255, 100)  // Green for pitch (上下)
-        val rollColor = Color.rgb(100, 100, 255)   // Blue for roll (旋轉)
+        val rollColor = Color.rgb(0, 0, 160)       // Deep blue for roll (旋轉)
 
-        // Draw 3D coordinate system
-        val axisLength = 100f * scaleFactor
+        // Draw rotation indicators with larger size
+        drawRotationIndicators(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
+
+        // Draw 3D coordinate system with increased axis length
+        val axisLength = 200f * scaleFactor  // Increased from 150f to 200f
         val points = calculate3DPoints(facePose.yaw, facePose.pitch, facePose.roll, axisLength)
         val projectedPoints = project3DPoints(points, noseX, noseY)
         draw3DAxes(canvas, projectedPoints, yawColor, pitchColor, rollColor)
@@ -199,7 +209,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // Draw orientation text
         drawOrientationText(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
     }
-
+    
     private fun calculate3DPoints(yaw: Float, pitch: Float, roll: Float, axisLength: Float): Array<FloatArray> {
         // Convert angles to radians
         val yawRad = Math.toRadians(yaw.toDouble())
@@ -252,6 +262,141 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             )
         }.toTypedArray()
     }
+    
+    private fun drawRotationIndicators(
+        canvas: Canvas,
+        centerX: Float,
+        centerY: Float,
+        facePose: FacePoseAnalyzer.FacePose,
+        yawColor: Int,
+        pitchColor: Int,
+        rollColor: Int
+    ) {
+        // Draw rotation indicators with thinner lines and high opacity
+        val indicatorPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1f * scaleFactor  // Thinner lines
+            isAntiAlias = true
+        }
+
+        // Draw yaw rotation indicator (horizontal arc)
+        indicatorPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+        val yawRadius = 60f * scaleFactor
+        canvas.drawArc(
+            centerX - yawRadius,
+            centerY - yawRadius,
+            centerX + yawRadius,
+            centerY + yawRadius,
+            -90f,
+            180f,
+            false,
+            indicatorPaint
+        )
+
+        // Draw pitch rotation indicator (vertical arc)
+        indicatorPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+        val pitchRadius = 45f * scaleFactor
+        canvas.drawArc(
+            centerX - pitchRadius,
+            centerY - pitchRadius,
+            centerX + pitchRadius,
+            centerY + pitchRadius,
+            0f,
+            180f,
+            false,
+            indicatorPaint
+        )
+
+        // Draw roll rotation indicator (circle with line)
+        indicatorPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+        val rollRadius = 30f * scaleFactor
+        canvas.drawCircle(centerX, centerY, rollRadius, indicatorPaint)
+        canvas.drawLine(
+            centerX - rollRadius,
+            centerY,
+            centerX + rollRadius,
+            centerY,
+            indicatorPaint
+        )
+
+        // Draw rotation arrows with thinner lines
+        val arrowPaint = Paint().apply {
+            strokeWidth = 1f * scaleFactor  // Thinner lines
+            isAntiAlias = true
+        }
+
+        // Draw yaw arrow
+        drawRotationArrow(
+            canvas,
+            centerX,
+            centerY,
+            yawRadius,
+            facePose.yaw,
+            Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)),
+            arrowPaint
+        )
+
+        // Draw pitch arrow
+        drawRotationArrow(
+            canvas,
+            centerX,
+            centerY,
+            pitchRadius,
+            facePose.pitch,
+            Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)),
+            arrowPaint
+        )
+
+        // Draw roll arrow
+        drawRotationArrow(
+            canvas,
+            centerX,
+            centerY,
+            rollRadius,
+            facePose.roll,
+            Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)),
+            arrowPaint
+        )
+    }
+
+    private fun drawRotationArrow(
+        canvas: Canvas,
+        centerX: Float,
+        centerY: Float,
+        radius: Float,
+        angle: Float,
+        color: Int,
+        paint: Paint
+    ) {
+        paint.color = color
+        paint.strokeWidth = 2f * scaleFactor  // Changed to 2f
+        
+        // Convert angle to radians
+        val angleRad = Math.toRadians(angle.toDouble())
+        
+        // Calculate arrow end point
+        val endX = centerX + radius * Math.cos(angleRad).toFloat()
+        val endY = centerY + radius * Math.sin(angleRad).toFloat()
+        
+        // Calculate arrow head points
+        val arrowLength = 15f * scaleFactor
+        val arrowAngle = Math.PI / 6  // 30 degrees
+        
+        val arrowAngle1 = angleRad + arrowAngle
+        val arrowAngle2 = angleRad - arrowAngle
+        
+        val arrowX1 = endX - arrowLength * Math.cos(arrowAngle1).toFloat()
+        val arrowY1 = endY - arrowLength * Math.sin(arrowAngle1).toFloat()
+        val arrowX2 = endX - arrowLength * Math.cos(arrowAngle2).toFloat()
+        val arrowY2 = endY - arrowLength * Math.sin(arrowAngle2).toFloat()
+        
+        // Draw arrow line
+        canvas.drawLine(centerX, centerY, endX, endY, paint)
+        
+        // Draw arrow head
+        canvas.drawLine(endX, endY, arrowX1, arrowY1, paint)
+        canvas.drawLine(endX, endY, arrowX2, arrowY2, paint)
+    }
 
     private fun draw3DAxes(
         canvas: Canvas,
@@ -261,51 +406,73 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         rollColor: Int
     ) {
         val axisPaint = Paint().apply {
-            strokeWidth = 5f
+            strokeWidth = 2f * scaleFactor
             isAntiAlias = true
         }
 
-        // Draw axes
-        // Yaw axis (red)
-        axisPaint.color = yawColor
-        canvas.drawLine(
-            points[0][0], points[0][1],
-            points[1][0], points[1][1],
-            axisPaint
-        )
-
-        // Pitch axis (green)
-        axisPaint.color = pitchColor
-        canvas.drawLine(
-            points[0][0], points[0][1],
-            points[2][0], points[2][1],
-            axisPaint
-        )
-
-        // Roll axis (blue)
-        axisPaint.color = rollColor
-        canvas.drawLine(
-            points[0][0], points[0][1],
-            points[3][0], points[3][1],
-            axisPaint
-        )
-
-        // Draw axis endpoints
-        val endpointRadius = 8f * scaleFactor
-        val endpointPaint = Paint().apply {
+        // Draw axes with gradient effect
+        val gradientPaint = Paint().apply {
             style = Paint.Style.FILL
             isAntiAlias = true
         }
 
-        // Draw endpoints for each axis
-        endpointPaint.color = yawColor
+        // Draw each axis with gradient and high opacity
+        drawGradientAxis(canvas, points[0], points[1], Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor)), axisPaint, gradientPaint)
+        drawGradientAxis(canvas, points[0], points[2], Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor)), axisPaint, gradientPaint)
+        drawGradientAxis(canvas, points[0], points[3], Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor)), axisPaint, gradientPaint)
+
+        // Draw axis endpoints with smaller radius (half size)
+        val endpointRadius = 2f * scaleFactor  // Reduced from 16f
+        val endpointPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+        }
+
+        // Draw endpoints for each axis with high opacity
+        endpointPaint.color = Color.argb(240, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
         canvas.drawCircle(points[1][0], points[1][1], endpointRadius, endpointPaint)
         
-        endpointPaint.color = pitchColor
+        endpointPaint.color = Color.argb(240, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
         canvas.drawCircle(points[2][0], points[2][1], endpointRadius, endpointPaint)
         
-        endpointPaint.color = rollColor
+        endpointPaint.color = Color.argb(240, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
         canvas.drawCircle(points[3][0], points[3][1], endpointRadius, endpointPaint)
+
+        // Draw axis labels with smaller text and transparency
+        val labelPaint = Paint().apply {
+            textSize = 10f * scaleFactor  // Changed from 10f to 12f
+            isAntiAlias = true
+            alpha = 140  // Added transparency
+        }
+
+        // Draw labels for each axis
+        labelPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
+        canvas.drawText("Yaw", points[1][0] + 10f * scaleFactor, points[1][1], labelPaint)
+        
+        labelPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
+        canvas.drawText("Pitch", points[2][0], points[2][1] - 10f * scaleFactor, labelPaint)
+        
+        labelPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
+        canvas.drawText("Roll", points[3][0] + 10f * scaleFactor, points[3][1] + 10f * scaleFactor, labelPaint)
+    }
+
+    private fun drawGradientAxis(
+        canvas: Canvas,
+        start: FloatArray,
+        end: FloatArray,
+        color: Int,
+        linePaint: Paint,
+        gradientPaint: Paint
+    ) {
+        // Draw main axis line
+        linePaint.color = color
+        canvas.drawLine(start[0], start[1], end[0], end[1], linePaint)
+
+        // Draw gradient effect
+        gradientPaint.color = Color.argb(100, Color.red(color), Color.green(color), Color.blue(color))
+        val radius = 5f * scaleFactor
+        canvas.drawCircle(start[0], start[1], radius, gradientPaint)
+        canvas.drawCircle(end[0], end[1], radius, gradientPaint)
     }
 
     private fun drawOrientationText(
@@ -317,16 +484,16 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         pitchColor: Int,
         rollColor: Int
     ) {
-        // Draw text background
+        // Draw text background with transparency
         val textBackgroundPaint = Paint().apply {
-            color = Color.argb(180, 0, 0, 0)
+            color = Color.argb(100, 0, 0, 0)  // Changed alpha to 140
             style = Paint.Style.FILL
         }
 
-        val textX = centerX - 120f * scaleFactor
+        val textX = centerX + 60f * scaleFactor
         val textY = centerY - 60f * scaleFactor
-        val textWidth = 240f * scaleFactor
-        val textHeight = 90f * scaleFactor
+        val textWidth = 80f * scaleFactor
+        val textHeight = 50f * scaleFactor
 
         canvas.drawRect(
             textX,
@@ -336,11 +503,12 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             textBackgroundPaint
         )
 
-        // Draw text
-        textPaint.textSize = 25f * scaleFactor
+        // Draw text with smaller size and transparency
+        textPaint.textSize = 10f  * scaleFactor  //Changed from 10f to 12f
+        textPaint.alpha = 100  // Added transparency
 
         // Yaw text
-        textPaint.color = yawColor
+        textPaint.color = Color.argb(140, Color.red(yawColor), Color.green(yawColor), Color.blue(yawColor))
         canvas.drawText(
             "Yaw: ${String.format("%.1f", facePose.yaw)}°",
             textX + 10f * scaleFactor,
@@ -349,20 +517,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         )
 
         // Pitch text
-        textPaint.color = pitchColor
+        textPaint.color = Color.argb(140, Color.red(pitchColor), Color.green(pitchColor), Color.blue(pitchColor))
         canvas.drawText(
             "Pitch: ${String.format("%.1f", facePose.pitch)}°",
             textX + 10f * scaleFactor,
-            textY - 20f * scaleFactor,
+            textY - 30f * scaleFactor,
             textPaint
         )
 
         // Roll text
-        textPaint.color = rollColor
+        textPaint.color = Color.argb(140, Color.red(rollColor), Color.green(rollColor), Color.blue(rollColor))
         canvas.drawText(
             "Roll: ${String.format("%.1f", facePose.roll)}°",
             textX + 10f * scaleFactor,
-            textY,
+            textY- 20f * scaleFactor,
             textPaint
         )
     }
@@ -391,7 +559,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val eyePaint = Paint().apply {
             color = Color.WHITE
             style = Paint.Style.STROKE
-            strokeWidth = 3f * scaleFactor
+            strokeWidth = 2f * scaleFactor
             isAntiAlias = true
         }
 
@@ -401,7 +569,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Draw gaze direction
         val gazePaint = Paint().apply {
-            color = Color.YELLOW
+            color = Color.RED
             strokeWidth = 3f * scaleFactor
             isAntiAlias = true
         }
@@ -450,8 +618,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     private fun drawFacePoseInfo(canvas: Canvas, facePose: FacePoseAnalyzer.FacePose, offsetX: Float, offsetY: Float, faceIndex: Int) {
         // Calculate base text position based on screen width and face index
         val columnWidth = width * 0.20f  // Each face gets 25% of screen width
-        val baseTextX = width * 0.68f + (columnWidth * faceIndex)  // Start at 75% and increment by column width
-        val baseTextY = 50f
+        val baseTextX = width * 0.00f + (columnWidth * faceIndex)  // Start at 75% and increment by column width
+        val baseTextY = 30f
         val lineHeight = 40f
         val textSpacing = 20f  // Additional spacing between different faces
 
@@ -490,7 +658,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         
         // Draw gaze visualization
         val gazeX = baseTextX
-        val gazeY = baseTextY + lineHeight * 8
+        val gazeY = baseTextY + lineHeight * 9
         drawGazeVisualization(canvas, facePose, gazeX, gazeY)
 
         // Draw head pose angles
@@ -635,7 +803,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     }
 
     private fun drawGazeVisualization(canvas: Canvas, facePose: FacePoseAnalyzer.FacePose, startX: Float, startY: Float) {
-        val size = 100f
+        val size = 200f
         val centerX = startX + size / 2
         val centerY = startY + size / 2
 
@@ -649,17 +817,17 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // Draw left eye
         val leftEyeX = centerX - size * 0.3f
         val leftEyeY = centerY
-        canvas.drawCircle(leftEyeX, leftEyeY, 10f, eyePaint)
+        canvas.drawCircle(leftEyeX, leftEyeY, 20f, eyePaint)
 
         // Draw right eye
         val rightEyeX = centerX + size * 0.3f
         val rightEyeY = centerY
-        canvas.drawCircle(rightEyeX, rightEyeY, 10f, eyePaint)
+        canvas.drawCircle(rightEyeX, rightEyeY, 20f, eyePaint)
 
         // Draw gaze direction
         val gazePaint = Paint().apply {
             color = Color.RED
-            strokeWidth = 3f
+            strokeWidth = 6f
             isAntiAlias = true
         }
 
@@ -668,7 +836,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val rightIris = facePose.irisPositions.rightIris
         
         // Draw gaze lines
-        val gazeLength = size * 0.4f
+        val gazeLength = size * 0.8f
         canvas.drawLine(
             leftEyeX,
             leftEyeY,
@@ -699,12 +867,9 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         scaleFactor = when (runningMode) {
             RunningMode.IMAGE,
             RunningMode.VIDEO -> {
-                min(width * 1f / imageWidth, height * 1f / imageHeight)
+                1.5f * min(width * 1f / imageWidth, height * 1f / imageHeight) // Double the scale
             }
             RunningMode.LIVE_STREAM -> {
-                // PreviewView is in FILL_START mode. So we need to scale up the
-                // landmarks to match with the size that the captured images will be
-                // displayed.
                 max(width * 1f / imageWidth, height * 1f / imageHeight)
             }
         }
