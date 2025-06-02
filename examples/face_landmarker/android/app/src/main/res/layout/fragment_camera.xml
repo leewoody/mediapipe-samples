@@ -27,7 +27,7 @@
         android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-        <LinearLayout
+    <LinearLayout
             android:id="@+id/overlay_controls"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -35,51 +35,48 @@
             android:background="#AAFFFFFF"
             android:orientation="vertical"
             android:padding="10dp">
-            <!-- Always available -->
-            <CheckBox
+        <!-- Always available -->
+        <CheckBox
                 android:id="@+id/checkbox_simple_mode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Simple Mode" />
-
-            <CheckBox
+        <CheckBox
                 android:id="@+id/checkbox_landmarks"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="Show Landmarks" />
-
-            <CheckBox
+        <CheckBox
                 android:id="@+id/checkbox_connectors"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="Show Connectors" />
-            <!-- Now always available (controls Head Pose Axes in both modes) -->
-            <CheckBox
+        <!-- Now always available (controls Head Pose Axes in both modes) -->
+        <CheckBox
                 android:id="@+id/checkbox_head_pose_axes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="Show Head Pose Axes"
                 android:visibility="visible" />
-            <!-- Now always available (controls Gaze in both modes) -->
-            <CheckBox
+        <!-- Now always available (controls Gaze in both modes) -->
+        <CheckBox
                 android:id="@+id/checkbox_gaze"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="Show Gaze"
                 android:visibility="visible" />
-
-            <CheckBox
+        <CheckBox
                 android:id="@+id/checkbox_face_pose_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="Show Face Pose Info"
                 android:visibility="visible" />
-        </LinearLayout>
+    </LinearLayout>
     <!-- LEFT: Simple Mode toggle, Landmarks, Connectors, Head Pose Axes, Gaze -->
     <!-- RIGHT: Simple Face Info, Face Pose Info, Head Pose Visualization -->
     <!--    <LinearLayout-->
