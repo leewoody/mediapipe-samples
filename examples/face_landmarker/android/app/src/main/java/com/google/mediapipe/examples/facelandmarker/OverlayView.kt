@@ -55,7 +55,55 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         Color.rgb(255, 200, 255)   // Light Purple
     )
 
+    // Drawing mode flags
     var simpleDrawMode: Boolean = false
+        set(value) {
+            field = value
+            invalidate() // Redraw when mode changes
+        }
+    
+    // Individual component visibility flags
+    var showFaceLandmarks: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    
+    var showConnectors: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    
+    var showHeadPoseAxes: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    
+    var showGaze: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    
+    var showFaceInfo: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    
+    var showFacePoseInfo: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    
+    var showHeadPoseVisualization: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     init {
         initPaints()
@@ -159,6 +207,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         offsetY: Float,
         faceIndex: Int
     ) {
+        if (!showFaceLandmarks) return
+
         if (simpleDrawMode) {
             // Use different color for each face
             val colorConn = faceColors[faceIndex % faceColors.size]
@@ -186,9 +236,9 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
-            faceLandmarks.forEach { landmark ->
-                val x = landmark.x() * imageWidth * scaleFactor + offsetX
-                val y = landmark.y() * imageHeight * scaleFactor + offsetY
+        faceLandmarks.forEach { landmark ->
+            val x = landmark.x() * imageWidth * scaleFactor + offsetX
+            val y = landmark.y() * imageHeight * scaleFactor + offsetY
                 canvas.drawCircle(x, y, 2f, landmarkPaint)
             }
         } else {
@@ -212,21 +262,15 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
-        faceLandmarks.forEach { landmark ->
-            val x = landmark.x() * imageWidth * scaleFactor + offsetX
-            val y = landmark.y() * imageHeight * scaleFactor + offsetY
+            faceLandmarks.forEach { landmark ->
+                val x = landmark.x() * imageWidth * scaleFactor + offsetX
+                val y = landmark.y() * imageHeight * scaleFactor + offsetY
                 canvas.drawCircle(x, y, 1f * scaleFactor, landmarkPaint)
             }
-            // Draw head pose and gaze visualizations at the nose tip
-            val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
-            //val noseTip = faceLandmarks[1]
-            //val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
-            //val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
-            //drawHeadPoseVisualization(canvas, facePose, noseX, noseY)
-            //drawGazeVisualization(canvas, facePose, noseX, noseY)
 
             // Draw head pose and gaze visualizations at the bottom of the face mesh (landmark 152)
-            if (faceLandmarks.size > 152) {
+            if (showHeadPoseVisualization && faceLandmarks.size > 152) {
+                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
                 val chin = faceLandmarks[152]
                 val chinX = chin.x() * imageWidth * scaleFactor + offsetX
                 val chinY = chin.y() * imageHeight * scaleFactor + offsetY
@@ -235,11 +279,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             }
 
             // Draw head pose axes on the face
-            drawHeadPoseOnFace(canvas, faceLandmarks, offsetX, offsetY)
+            if (showHeadPoseAxes) {
+                drawHeadPoseOnFace(canvas, faceLandmarks, offsetX, offsetY)
+            }
 
             // Draw gaze direction on the face
-            drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY)
+            if (showGaze) {
+                drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY)
+            }
 
+            // Draw face pose info
+            if (showFacePoseInfo) {
+                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+                drawFacePoseInfo(canvas, facePose, offsetX, offsetY, faceIndex)
+            }
         }
     }
 
@@ -709,6 +762,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         offsetY: Float,
         faceIndex: Int
     ) {
+        if (!showConnectors) return
+
         FaceLandmarker.FACE_LANDMARKS_CONNECTORS.filterNotNull().forEach { connector ->
             val startLandmark = faceLandmarks.getOrNull(connector.start())
             val endLandmark = faceLandmarks.getOrNull(connector.end())
@@ -730,14 +785,22 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
 
             // Draw simple head pose axes at nose tip
-            val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
-            drawSimpleHeadPoseAxes(canvas, facePose, noseX, noseY)
+            if (showHeadPoseAxes) {
+                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+                drawSimpleHeadPoseAxes(canvas, facePose, noseX, noseY)
+            }
             
             // Draw simple gaze lines from nose tip
-            drawSimpleGaze(canvas, facePose, offsetX, offsetY, gazeLength = 80f)
+            if (showGaze) {
+                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+                drawSimpleGaze(canvas, facePose, offsetX, offsetY, gazeLength = 80f)
+            }
             
             // Draw simple face info near nose tip
-            drawSimpleFaceInfo(canvas, noseX, noseY, faceIndex, facePose)
+            if (showFaceInfo) {
+                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+                drawSimpleFaceInfo(canvas, noseX, noseY, faceIndex, facePose)
+            }
         }
     }
 

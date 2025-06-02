@@ -23,6 +23,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import android.widget.CheckBox
 import android.widget.Toast
 import androidx.camera.core.Preview
 import androidx.camera.core.CameraSelector
@@ -168,6 +169,58 @@ class CameraFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
 
         // Attach listeners to UI control widgets
         initBottomSheetControls()
+
+        val overlay = fragmentCameraBinding.overlay
+
+        // Checkbox references
+        val simpleModeCheckbox = view.findViewById<CheckBox>(R.id.checkbox_simple_mode)
+        val landmarksCheckbox = view.findViewById<CheckBox>(R.id.checkbox_landmarks)
+        val connectorsCheckbox = view.findViewById<CheckBox>(R.id.checkbox_connectors)
+        val headPoseAxesCheckbox = view.findViewById<CheckBox>(R.id.checkbox_head_pose_axes)
+        val gazeCheckbox = view.findViewById<CheckBox>(R.id.checkbox_gaze)
+        val faceInfoCheckbox = view.findViewById<CheckBox>(R.id.checkbox_face_info)
+        val facePoseInfoCheckbox = view.findViewById<CheckBox>(R.id.checkbox_face_pose_info)
+        val headPoseVisualizationCheckbox = view.findViewById<CheckBox>(R.id.checkbox_head_pose_visualization)
+
+        // Listeners for all checkboxes
+        simpleModeCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.simpleDrawMode = isChecked
+            // Show/hide controls depending on mode
+            headPoseAxesCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
+            gazeCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
+            faceInfoCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
+            facePoseInfoCheckbox.visibility = if (isChecked) View.GONE else View.VISIBLE
+            headPoseVisualizationCheckbox.visibility = if (isChecked) View.GONE else View.VISIBLE
+        }
+        landmarksCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showFaceLandmarks = isChecked
+        }
+        connectorsCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showConnectors = isChecked
+        }
+        headPoseAxesCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showHeadPoseAxes = isChecked
+        }
+        gazeCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showGaze = isChecked
+        }
+        faceInfoCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showFaceInfo = isChecked
+        }
+        facePoseInfoCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showFacePoseInfo = isChecked
+        }
+        headPoseVisualizationCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showHeadPoseVisualization = isChecked
+        }
+
+        // Set initial visibility for controls
+        simpleModeCheckbox.isChecked = overlay.simpleDrawMode
+        headPoseAxesCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
+        gazeCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
+        faceInfoCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
+        facePoseInfoCheckbox.visibility = if (overlay.simpleDrawMode) View.GONE else View.VISIBLE
+        headPoseVisualizationCheckbox.visibility = if (overlay.simpleDrawMode) View.GONE else View.VISIBLE
     }
 
     private fun initBottomSheetControls() {

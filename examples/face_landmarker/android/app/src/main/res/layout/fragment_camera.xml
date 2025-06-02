@@ -19,21 +19,87 @@
     android:id="@+id/camera_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <androidx.camera.view.PreviewView
         android:id="@+id/view_finder"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
     <com.google.mediapipe.examples.facelandmarker.OverlayView
         android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <LinearLayout
+        android:id="@+id/overlay_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:background="#AAFFFFFF"
+        android:orientation="vertical"
+        android:padding="60dp">
+        <!-- Always available -->
+        <CheckBox
+            android:id="@+id/checkbox_simple_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Simple Mode" />
+
+        <CheckBox
+            android:id="@+id/checkbox_landmarks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Landmarks" />
+
+        <CheckBox
+            android:id="@+id/checkbox_connectors"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Connectors" />
+        <!-- Simple Mode controls (default: visible only in Simple Mode) -->
+        <CheckBox
+            android:id="@+id/checkbox_head_pose_axes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Head Pose Axes"
+            android:visibility="gone" />
+
+        <CheckBox
+            android:id="@+id/checkbox_gaze"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Gaze"
+            android:visibility="gone" />
+
+        <CheckBox
+            android:id="@+id/checkbox_face_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Face Info"
+            android:visibility="gone" />
+        <!-- Full Mode controls (default: visible only in Full Mode) -->
+        <CheckBox
+            android:id="@+id/checkbox_face_pose_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Face Pose Info"
+            android:visibility="visible" />
+
+        <CheckBox
+            android:id="@+id/checkbox_head_pose_visualization"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Head Pose Visualization"
+            android:visibility="visible" />
+    </LinearLayout>
     <include
         android:id="@+id/bottom_sheet_layout"
         layout="@layout/info_bottom_sheet" />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerview_results"
         android:layout_width="match_parent"
@@ -46,7 +112,6 @@
         app:layout_anchor="@id/bottom_sheet_layout"
         app:layout_anchorGravity="top"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
-
     <View
         android:layout_width="wrap_content"
         android:layout_height="1dp"

@@ -103,6 +103,33 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         }
 
         initBottomSheetControls()
+
+        val overlay = fragmentGalleryBinding.overlay
+
+        fragmentGalleryBinding.checkboxSimpleMode.setOnCheckedChangeListener { _, isChecked ->
+            overlay.simpleDrawMode = isChecked
+        }
+        fragmentGalleryBinding.checkboxLandmarks.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showFaceLandmarks = isChecked
+        }
+        fragmentGalleryBinding.checkboxConnectors.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showConnectors = isChecked
+        }
+        fragmentGalleryBinding.checkboxHeadPoseAxes.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showHeadPoseAxes = isChecked
+        }
+        fragmentGalleryBinding.checkboxGaze.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showGaze = isChecked
+        }
+        fragmentGalleryBinding.checkboxFaceInfo.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showFaceInfo = isChecked
+        }
+        fragmentGalleryBinding.checkboxFacePoseInfo.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showFacePoseInfo = isChecked
+        }
+        fragmentGalleryBinding.checkboxHeadPoseVisualization.setOnCheckedChangeListener { _, isChecked ->
+            overlay.showHeadPoseVisualization = isChecked
+        }
     }
 
     override fun onPause() {
