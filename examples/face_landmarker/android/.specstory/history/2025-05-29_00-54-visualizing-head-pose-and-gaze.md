@@ -5243,11 +5243,11 @@ Now you can control the visibility of each component from outside the `OverlayVi
         android:layout_height="wrap_content"
         android:text="Show Face Pose Info" />
 
-<!--    <CheckBox-->
-<!--        android:id="@+id/showHeadPoseVisualizationCheckbox"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="Show Head Pose Visualization" />-->
+    <CheckBox
+        android:id="@+id/showHeadPoseVisualizationCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show Head Pose Visualization" />
 </LinearLayout>
 ```
 
@@ -6057,6 +6057,175 @@ Is there anything else you need assistance with regarding the drawing logic or U
 _**User**_
 
 @fragment_camera.xml in FullMode ("Non simpleDrawMode"),  add the checkbox for showHeadPoseAxes, showGaze and seperate from the drawFaceLandmarks
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I understand. You want the checkboxes for `showHeadPoseAxes` and `showGaze` to be available and control the corresponding visualizations in Full Mode (`drawHeadPoseOnFace` and `drawGazeOnFace`), independent of the `drawFaceLandmarks` checkbox.
+
+Looking at the `fragment_camera.xml` you provided, you already have checkboxes with the IDs `checkbox_head_pose_axes` and `checkbox_gaze`. Currently, they are inside the "Simple Mode controls" `LinearLayout` and have `android:visibility="gone"` by default.
+
+To make them available in Full Mode and independent:
+
+1.  We need to move the `checkbox_head_pose_axes` and `checkbox_gaze` outside of the simple mode-specific group.
+2.  We can move them to the left-aligned `LinearLayout` where the simple mode toggle, landmarks, and connectors checkboxes are.
+3.  We need to ensure their default visibility is `visible`.
+
+Here is the updated section in your `fragment_camera.xml`:
+
+```xml
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/camera_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.camera.view.PreviewView
+        android:id="@+id/view_finder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+    <com.google.mediapipe.examples.facelandmarker.OverlayView
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- LEFT: Simple Mode toggle, Landmarks, Connectors, Head Pose Axes, Gaze -->
+    <LinearLayout
+        android:id="@+id/overlay_controls_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="top|start"
+        android:background="#AAFFFFFF"
+        android:padding="8dp">
+
+        <!-- Always available -->
+        <CheckBox
+            android:id="@+id/checkbox_simple_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Simple Mode" />
+
+        <CheckBox
+            android:id="@+id/checkbox_landmarks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Landmarks" />
+
+        <CheckBox
+            android:id="@+id/checkbox_connectors"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Connectors" />
+
+        <!-- Now always available (controls Head Pose Axes in both modes) -->
+        <CheckBox
+            android:id="@+id/checkbox_head_pose_axes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Head Pose Axes"
+            android:visibility="visible" />
+
+        <!-- Now always available (controls Gaze in both modes) -->
+        <CheckBox
+            android:id="@+id/checkbox_gaze"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Gaze"
+            android:visibility="visible" />
+
+    </LinearLayout>
+
+    <!-- RIGHT: Simple Face Info, Face Pose Info, Head Pose Visualization -->
+    <LinearLayout
+        android:id="@+id/overlay_controls_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="top|end"
+        android:background="#AAFFFFFF"
+        android:padding="8dp">
+
+        <!-- Simple Mode only controls -->
+        <CheckBox
+            android:id="@+id/checkbox_face_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Simple Face Info"
+            android:visibility="gone" />
+
+        <!-- Full Mode only controls -->
+        <CheckBox
+            android:id="@+id/checkbox_face_pose_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Face Pose Info"
+            android:visibility="visible" />
+
+        <CheckBox
+            android:id="@+id/checkbox_head_pose_visualization"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Show Head Pose Visualization"
+            android:visibility="visible" />
+    </LinearLayout>
+
+    <include
+        android:id="@+id/bottom_sheet_layout"
+        layout="@layout/info_bottom_sheet" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerview_results"
+        android:layout_width="match_parent"
+        android:layout_height="75dp"
+        android:layout_gravity="top"
+        android:layout_marginBottom="@dimen/bottom_sheet_peek_height"
+        android:background="@color/bottom_sheet_background"
+        android:clipToPadding="true"
+        android:paddingHorizontal="@dimen/bottom_sheet_padding"
+        app:layout_anchor="@id/bottom_sheet_layout"
+        app:layout_anchorGravity="top"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="1dp"
+        android:background="@color/mp_color_primary"
+        app:layout_anchor="@id/recyclerview_results"
+        app:layout_anchorGravity="bottom" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+**Changes Made:**
+
+-   Created a new `LinearLayout` `overlay_controls_left` for the checkboxes that are always visible or primarily associated with the main overlay elements.
+-   Moved `checkbox_simple_mode`, `checkbox_landmarks`, `checkbox_connectors`, `checkbox_head_pose_axes`, and `checkbox_gaze` into `overlay_controls_left`.
+-   Ensured `checkbox_head_pose_axes` and `checkbox_gaze` have `android:visibility="visible"`.
+-   The remaining checkboxes (`checkbox_face_info`, `checkbox_face_pose_info`, `checkbox_head_pose_visualization`) are in `overlay_controls_right`, maintaining their mode-specific visibility as before (controlled by the fragment logic).
+-   Renamed the text for `checkbox_face_info` slightly for clarity ("Show Simple Face Info").
+
+Your `CameraFragment.kt` and `OverlayView.kt` already have the logic to handle these flags independently, so no further code changes should be needed there based on this request.
+
+Now, the checkboxes for "Show Head Pose Axes" and "Show Gaze" will be visible in both Simple and Full modes, and will control the visibility of the respective drawing functions (`drawSimpleHeadPoseAxes` or `drawHeadPoseOnFace` for axes, and `drawSimpleGaze` or `drawGazeOnFace`/part of `drawFaceLandmarks` at 152 for gaze) based on the `simpleDrawMode` state.
+
+Let me know if this looks correct or if you need any other modifications!
+
+---
+
+_**User**_
+
+@fragment_camera.xml , @fragment_gallery.xml 請將 overlay_controls 調整為以兩個為左右一組的排列方式
 
 ---
 

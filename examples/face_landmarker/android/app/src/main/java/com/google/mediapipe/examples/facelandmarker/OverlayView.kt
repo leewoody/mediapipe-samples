@@ -771,20 +771,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         if (showConnectors)
         {
          
-            FaceLandmarker.FACE_LANDMARKS_CONNECTORS.filterNotNull().forEach { connector ->
-                val startLandmark = faceLandmarks.getOrNull(connector.start())
-                val endLandmark = faceLandmarks.getOrNull(connector.end())
+        FaceLandmarker.FACE_LANDMARKS_CONNECTORS.filterNotNull().forEach { connector ->
+            val startLandmark = faceLandmarks.getOrNull(connector.start())
+            val endLandmark = faceLandmarks.getOrNull(connector.end())
 
-                if (startLandmark != null && endLandmark != null) {
-                    val startX = startLandmark.x() * imageWidth * scaleFactor + offsetX
-                    val startY = startLandmark.y() * imageHeight * scaleFactor + offsetY
-                    val endX = endLandmark.x() * imageWidth * scaleFactor + offsetX
-                    val endY = endLandmark.y() * imageHeight * scaleFactor + offsetY
+            if (startLandmark != null && endLandmark != null) {
+                val startX = startLandmark.x() * imageWidth * scaleFactor + offsetX
+                val startY = startLandmark.y() * imageHeight * scaleFactor + offsetY
+                val endX = endLandmark.x() * imageWidth * scaleFactor + offsetX
+                val endY = endLandmark.y() * imageHeight * scaleFactor + offsetY
 
-                    canvas.drawLine(startX, startY, endX, endY, linePaint)
-                }
+                canvas.drawLine(startX, startY, endX, endY, linePaint)
             }
         }
+    }
         if (simpleDrawMode) {
             // Get nose tip position
             val noseTip = faceLandmarks[1]  // Nose tip landmark
