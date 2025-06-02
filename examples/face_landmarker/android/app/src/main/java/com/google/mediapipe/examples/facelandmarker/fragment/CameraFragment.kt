@@ -178,19 +178,19 @@ class CameraFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         val connectorsCheckbox = view.findViewById<CheckBox>(R.id.checkbox_connectors)
         val headPoseAxesCheckbox = view.findViewById<CheckBox>(R.id.checkbox_head_pose_axes)
         val gazeCheckbox = view.findViewById<CheckBox>(R.id.checkbox_gaze)
-        val faceInfoCheckbox = view.findViewById<CheckBox>(R.id.checkbox_face_info)
+        //val faceInfoCheckbox = view.findViewById<CheckBox>(R.id.checkbox_face_info)
         val facePoseInfoCheckbox = view.findViewById<CheckBox>(R.id.checkbox_face_pose_info)
-        val headPoseVisualizationCheckbox = view.findViewById<CheckBox>(R.id.checkbox_head_pose_visualization)
+//        val headPoseVisualizationCheckbox = view.findViewById<CheckBox>(R.id.checkbox_head_pose_visualization)
 
         // Listeners for all checkboxes
         simpleModeCheckbox.setOnCheckedChangeListener { _, isChecked ->
             overlay.simpleDrawMode = isChecked
             // Show/hide controls depending on mode
-            headPoseAxesCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
-            gazeCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
-            faceInfoCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
-            facePoseInfoCheckbox.visibility = if (isChecked) View.GONE else View.VISIBLE
-            headPoseVisualizationCheckbox.visibility = if (isChecked) View.GONE else View.VISIBLE
+            //headPoseAxesCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
+            //gazeCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
+            //faceInfoCheckbox.visibility = if (isChecked) View.VISIBLE else View.GONE
+//            facePoseInfoCheckbox.visibility = if (isChecked) View.GONE else View.VISIBLE
+//            headPoseVisualizationCheckbox.visibility = if (isChecked) View.GONE else View.VISIBLE
         }
         landmarksCheckbox.setOnCheckedChangeListener { _, isChecked ->
             overlay.showFaceLandmarks = isChecked
@@ -204,23 +204,23 @@ class CameraFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         gazeCheckbox.setOnCheckedChangeListener { _, isChecked ->
             overlay.showGaze = isChecked
         }
-        faceInfoCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showFaceInfo = isChecked
-        }
+//        faceInfoCheckbox.setOnCheckedChangeListener { _, isChecked ->
+//            overlay.showFaceInfo = isChecked
+//        }
         facePoseInfoCheckbox.setOnCheckedChangeListener { _, isChecked ->
             overlay.showFacePoseInfo = isChecked
         }
-        headPoseVisualizationCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showHeadPoseVisualization = isChecked
-        }
+//        headPoseVisualizationCheckbox.setOnCheckedChangeListener { _, isChecked ->
+//            overlay.showHeadPoseVisualization = isChecked
+//        }
 
         // Set initial visibility for controls
         simpleModeCheckbox.isChecked = overlay.simpleDrawMode
-        headPoseAxesCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
-        gazeCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
-        faceInfoCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
-        facePoseInfoCheckbox.visibility = if (overlay.simpleDrawMode) View.GONE else View.VISIBLE
-        headPoseVisualizationCheckbox.visibility = if (overlay.simpleDrawMode) View.GONE else View.VISIBLE
+        //headPoseAxesCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
+        //gazeCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
+        //faceInfoCheckbox.visibility = if (overlay.simpleDrawMode) View.VISIBLE else View.GONE
+//        facePoseInfoCheckbox.visibility = if (overlay.simpleDrawMode) View.GONE else View.VISIBLE
+//        headPoseVisualizationCheckbox.visibility = if (overlay.simpleDrawMode) View.GONE else View.VISIBLE
     }
 
     private fun initBottomSheetControls() {

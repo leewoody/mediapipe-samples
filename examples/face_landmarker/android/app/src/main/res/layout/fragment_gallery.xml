@@ -61,58 +61,65 @@
                 android:theme="@style/AppThemeProgressStyle"
                 android:visibility="gone" />
         </RelativeLayout>
+
         <LinearLayout
             android:id="@+id/overlay_controls"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="50dp">
+
             <CheckBox
                 android:id="@+id/checkbox_simple_mode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Simple Mode" />
+
             <CheckBox
                 android:id="@+id/checkbox_landmarks"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Show Landmarks"
-                android:checked="true" />
+                android:checked="true"
+                android:text="Show Landmarks" />
+
             <CheckBox
                 android:id="@+id/checkbox_connectors"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Show Connectors"
-                android:checked="true" />
+                android:checked="true"
+                android:text="Show Connectors" />
+
             <CheckBox
                 android:id="@+id/checkbox_head_pose_axes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Show Head Pose Axes"
-                android:checked="true" />
+                android:checked="true"
+                android:text="Show Head Pose Axes" />
+
             <CheckBox
                 android:id="@+id/checkbox_gaze"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Show Gaze"
-                android:checked="true" />
-            <CheckBox
-                android:id="@+id/checkbox_face_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Show Face Info"
-                android:checked="true" />
+                android:checked="true"
+                android:text="Show Gaze" />
+            <!--            <CheckBox-->
+            <!--                android:id="@+id/checkbox_face_info"-->
+            <!--                android:layout_width="wrap_content"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:text="Show Face Info"-->
+            <!--                android:checked="true" />-->
             <CheckBox
                 android:id="@+id/checkbox_face_pose_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Show Face Pose Info"
-                android:checked="true" />
-            <CheckBox
-                android:id="@+id/checkbox_head_pose_visualization"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Show Head Pose Visualization"
-                android:checked="true" />
+                android:checked="true"
+                android:text="Show Face Pose Info" />
+            <!--            <CheckBox-->
+            <!--                android:id="@+id/checkbox_head_pose_visualization"-->
+            <!--                android:layout_width="wrap_content"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:text="Show Head Pose Visualization"-->
+            <!--                android:checked="true" />-->
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
     <com.google.android.material.floatingactionbutton.FloatingActionButton

@@ -27,15 +27,15 @@
         android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
+    <!-- LEFT: Simple Mode toggle, Landmarks, Connectors, Head Pose Axes, Gaze -->
     <LinearLayout
-        android:id="@+id/overlay_controls"
+        android:id="@+id/overlay_controls_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
+        android:layout_gravity="top|start"
         android:background="#AAFFFFFF"
         android:orientation="vertical"
-        android:padding="60dp">
+        android:padding="50dp">
         <!-- Always available -->
         <CheckBox
             android:id="@+id/checkbox_simple_mode"
@@ -56,31 +56,23 @@
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="Show Connectors" />
-        <!-- Simple Mode controls (default: visible only in Simple Mode) -->
+        <!-- Now always available (controls Head Pose Axes in both modes) -->
         <CheckBox
             android:id="@+id/checkbox_head_pose_axes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="Show Head Pose Axes"
-            android:visibility="gone" />
-
+            android:visibility="visible" />
+        <!-- Now always available (controls Gaze in both modes) -->
         <CheckBox
             android:id="@+id/checkbox_gaze"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="Show Gaze"
-            android:visibility="gone" />
+            android:visibility="visible" />
 
-        <CheckBox
-            android:id="@+id/checkbox_face_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Show Face Info"
-            android:visibility="gone" />
-        <!-- Full Mode controls (default: visible only in Full Mode) -->
         <CheckBox
             android:id="@+id/checkbox_face_pose_info"
             android:layout_width="wrap_content"
@@ -89,14 +81,41 @@
             android:text="Show Face Pose Info"
             android:visibility="visible" />
 
-        <CheckBox
-            android:id="@+id/checkbox_head_pose_visualization"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Show Head Pose Visualization"
-            android:visibility="visible" />
     </LinearLayout>
+    <!-- RIGHT: Simple Face Info, Face Pose Info, Head Pose Visualization -->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/overlay_controls_right"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_gravity="top|end"-->
+<!--        android:background="#AAFFFFFF"-->
+<!--        android:orientation="vertical"-->
+<!--        android:padding="50dp">-->
+        <!-- Simple Mode only controls -->
+<!--        <CheckBox-->
+<!--            android:id="@+id/checkbox_face_info"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:checked="true"-->
+<!--            android:text="Show Simple Face Info"-->
+<!--            android:visibility="gone" />-->
+        <!-- Full Mode only controls -->
+<!--        <CheckBox-->
+<!--            android:id="@+id/checkbox_face_pose_info"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:checked="true"-->
+<!--            android:text="Show Face Pose Info"-->
+<!--            android:visibility="visible" />-->
+
+<!--        <CheckBox-->
+<!--            android:id="@+id/checkbox_head_pose_visualization"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:checked="true"-->
+<!--            android:text="Show Head Pose Visualization"-->
+<!--            android:visibility="visible" />-->
+<!--    </LinearLayout>-->
     <include
         android:id="@+id/bottom_sheet_layout"
         layout="@layout/info_bottom_sheet" />

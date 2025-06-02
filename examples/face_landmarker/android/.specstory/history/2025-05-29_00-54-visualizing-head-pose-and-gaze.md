@@ -5243,11 +5243,11 @@ Now you can control the visibility of each component from outside the `OverlayVi
         android:layout_height="wrap_content"
         android:text="Show Face Pose Info" />
 
-    <CheckBox
-        android:id="@+id/showHeadPoseVisualizationCheckbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Show Head Pose Visualization" />
+<!--    <CheckBox-->
+<!--        android:id="@+id/showHeadPoseVisualizationCheckbox"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Show Head Pose Visualization" />-->
 </LinearLayout>
 ```
 
@@ -5820,6 +5820,243 @@ Let me know if you need further help!
 _**User**_
 
 checkbox_simple_mode, checkbox_landmarks, checkbox_connectors 單獨在左邊
+
+---
+
+_**Assistant**_
+
+To place `checkbox_simple_mode`, `checkbox_landmarks`, and `checkbox_connectors` **alone on the left side** (and keep the other checkboxes on the right), you should:
+
+- Create two separate `LinearLayout` containers: one aligned to the left, one to the right.
+- Place the three checkboxes in the left container, and the rest in the right container.
+
+Here’s how you can update your `fragment_camera.xml`:
+
+---
+
+```xml
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/camera_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/view_finder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- LEFT: Simple Mode, Landmarks, Connectors -->
+    <LinearLayout
+        android:id="@+id/overlay_controls_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="top|start"
+        android:background="#AAFFFFFF"
+        android:padding="8dp">
+
+        <CheckBox
+            android:id="@+id/checkbox_simple_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Simple Mode" />
+
+        <CheckBox
+            android:id="@+id/checkbox_landmarks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Landmarks"
+            android:checked="true" />
+
+        <CheckBox
+            android:id="@+id/checkbox_connectors"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Connectors"
+            android:checked="true" />
+    </LinearLayout>
+
+    <!-- RIGHT: All other controls -->
+    <LinearLayout
+        android:id="@+id/overlay_controls_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="top|end"
+        android:background="#AAFFFFFF"
+        android:padding="8dp">
+
+        <!-- Simple Mode controls -->
+        <CheckBox
+            android:id="@+id/checkbox_head_pose_axes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Head Pose Axes"
+            android:checked="true"
+            android:visibility="gone" />
+
+        <CheckBox
+            android:id="@+id/checkbox_gaze"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Gaze"
+            android:checked="true"
+            android:visibility="gone" />
+
+        <CheckBox
+            android:id="@+id/checkbox_face_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Face Info"
+            android:checked="true"
+            android:visibility="gone" />
+
+        <!-- Full Mode controls -->
+        <CheckBox
+            android:id="@+id/checkbox_face_pose_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Face Pose Info"
+            android:checked="true"
+            android:visibility="visible" />
+
+        <CheckBox
+            android:id="@+id/checkbox_head_pose_visualization"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Head Pose Visualization"
+            android:checked="true"
+            android:visibility="visible" />
+    </LinearLayout>
+
+    <com.google.mediapipe.examples.facelandmarker.OverlayView
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <include
+        android:id="@+id/bottom_sheet_layout"
+        layout="@layout/info_bottom_sheet" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerview_results"
+        android:layout_width="match_parent"
+        android:layout_height="75dp"
+        android:layout_gravity="top"
+        android:layout_marginBottom="@dimen/bottom_sheet_peek_height"
+        android:background="@color/bottom_sheet_background"
+        android:clipToPadding="true"
+        android:paddingHorizontal="@dimen/bottom_sheet_padding"
+        app:layout_anchor="@id/bottom_sheet_layout"
+        app:layout_anchorGravity="top"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="1dp"
+        android:background="@color/mp_color_primary"
+        app:layout_anchor="@id/recyclerview_results"
+        app:layout_anchorGravity="bottom" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+```
+
+---
+
+**Summary:**
+- The three main checkboxes are now on the left.
+- All other controls are on the right.
+- You can keep your fragment logic the same, just update the references to the new container IDs if needed.
+
+Let me know if you want the Kotlin code for handling these controls, or if you need further adjustments!
+
+---
+
+_**User**_
+
+@CameraFragment.kt m @OverlayView.kt , @fragment_camera.xml 
+When "Full Mode". the drawHeadPoseVisualization, drawGazeVisualization, drawHeadPoseOnFace, drawGazeOnFace. drawFacePoseInfo should have their own checkbox and independ from the drawFaceLandmarks.
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I understand you want to make the visibility of the full-mode drawing features (`drawHeadPoseVisualization`, `drawGazeVisualization`, `drawHeadPoseOnFace`, `drawGazeOnFace`, `drawFacePoseInfo`) independently controllable via checkboxes when in "Full Mode".
+
+We need to make sure the `OverlayView.kt` code checks the individual visibility flags in the "Full Mode" (`else` block of the `simpleDrawMode` check).
+
+Based on your attached `OverlayView.kt` code, the "Full Mode" section already contains checks for `showHeadPoseVisualization`, `showHeadPoseAxes`, `showGaze`, and `showFacePoseInfo`. However, the calls to `drawHeadPoseVisualization` and `drawGazeVisualization` at landmark 152 are grouped under a single `if (showHeadPoseVisualization && faceLandmarks.size > 152)` check.
+
+Let's modify `drawFaceLandmarks` in `OverlayView.kt` to allow individual control of `drawHeadPoseVisualization` and `drawGazeVisualization` even when drawn at landmark 152.
+
+Here is the change for `OverlayView.kt`:
+
+
+---
+
+```diff
+  
+              // Draw head pose and gaze visualizations at the bottom of the face mesh (landmark 152)
+-             if (showHeadPoseVisualization && faceLandmarks.size > 152) {
++             if (faceLandmarks.size > 152) {
+                  val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+                  val chin = faceLandmarks[152]
+                  val chinX = chin.x() * imageWidth * scaleFactor + offsetX
+                  val chinY = chin.y() * imageHeight * scaleFactor + offsetY
++                 if (showHeadPoseVisualization) {
+                      drawHeadPoseVisualization(canvas, facePose, chinX, chinY)
++                 }
++                 if (showGaze) {
+                      drawGazeVisualization(canvas, facePose, chinX, chinY)
++                 }
+              }
+  
+```
+
+---
+
+
+
+---
+
+Okay, the necessary code changes in `OverlayView.kt` and the layout `fragment_camera.xml` have already been made in our previous steps to support independent control of these drawing elements via checkboxes in both "Simple Mode" and "Full Mode".
+
+Here's a summary of how it works now:
+
+1.  **`OverlayView.kt`:**
+    *   Public boolean flags (`showFaceLandmarks`, `showConnectors`, `showHeadPoseAxes`, `showGaze`, `showFaceInfo`, `showFacePoseInfo`, `showHeadPoseVisualization`) are added to control the visibility of each drawing component.
+    *   The `drawFaceLandmarks` and `drawFaceConnectors` functions check these flags before drawing the respective elements.
+    *   The logic correctly separates drawing based on `simpleDrawMode`:
+        *   In `simpleDrawMode`: Checks `showFaceLandmarks`, `showConnectors`, `showHeadPoseAxes`, `showGaze`, and `showFaceInfo`.
+        *   In "Full Mode" (the `else` block): Checks `showFaceLandmarks`, `showConnectors`, `showHeadPoseAxes` (for `drawHeadPoseOnFace`), `showGaze` (for `drawGazeOnFace` and `drawGazeVisualization` at 152), `showFacePoseInfo` (for `drawFacePoseInfo`), and `showHeadPoseVisualization` (for `drawHeadPoseVisualization` at 152).
+
+2.  **`fragment_camera.xml`:**
+    *   Checkboxes are added for `checkbox_simple_mode`, `checkbox_landmarks`, `checkbox_connectors`. These are placed in the left `LinearLayout`.
+    *   Checkboxes are added for `checkbox_head_pose_axes`, `checkbox_gaze`, `checkbox_face_info` (Simple Mode specific) and `checkbox_face_pose_info`, `checkbox_head_pose_visualization` (Full Mode specific). These are placed in the right `LinearLayout`.
+    *   Initial visibility for Simple/Full mode specific checkboxes is set using `android:visibility="gone"` or `"visible"`.
+
+3.  **`CameraFragment.kt`:**
+    *   The `onViewCreated` method gets references to all the checkboxes.
+    *   Listeners are attached to each checkbox to update the corresponding visibility flag in the `overlay` (your `OverlayView` instance).
+    *   The listener for `checkbox_simple_mode` dynamically shows/hides the checkboxes in the right `LinearLayout` based on the selected mode.
+
+With these changes, you can now independently control the visibility of Landmarks, Connectors, and each specific visualization (`HeadPoseAxes`, `Gaze`, `FaceInfo`, `FacePoseInfo`, `HeadPoseVisualization`) using their respective checkboxes, regardless of whether you are in Simple Mode or Full Mode.
+
+The build error for `CheckBox` was fixed by adding the necessary import in the previous step.
+
+Is there anything else you need assistance with regarding the drawing logic or UI controls?
+
+---
+
+_**User**_
+
+@fragment_camera.xml in FullMode ("Non simpleDrawMode"),  add the checkbox for showHeadPoseAxes, showGaze and seperate from the drawFaceLandmarks
 
 ---
 

@@ -121,15 +121,15 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         fragmentGalleryBinding.checkboxGaze.setOnCheckedChangeListener { _, isChecked ->
             overlay.showGaze = isChecked
         }
-        fragmentGalleryBinding.checkboxFaceInfo.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showFaceInfo = isChecked
-        }
+//        fragmentGalleryBinding.checkboxFaceInfo.setOnCheckedChangeListener { _, isChecked ->
+//            overlay.showFaceInfo = isChecked
+//        }
         fragmentGalleryBinding.checkboxFacePoseInfo.setOnCheckedChangeListener { _, isChecked ->
             overlay.showFacePoseInfo = isChecked
         }
-        fragmentGalleryBinding.checkboxHeadPoseVisualization.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showHeadPoseVisualization = isChecked
-        }
+//        fragmentGalleryBinding.checkboxHeadPoseVisualization.setOnCheckedChangeListener { _, isChecked ->
+//            overlay.showHeadPoseVisualization = isChecked
+//        }
     }
 
     override fun onPause() {
