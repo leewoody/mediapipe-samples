@@ -170,7 +170,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
                 val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
                 if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
-                     drawHeadPoseCube(canvas, facePose, noseX, noseY)
+                    drawHeadPoseCube(canvas, faceLandmarks, facePose, noseX, noseY)
                 }
 
                 // Draw face number near the face with matching color
@@ -430,16 +430,16 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // Define colors for each rotation axis
         val yawColor = Color.rgb(255, 100, 100)    // Red for yaw (左右)
         val pitchColor = Color.rgb(100, 255, 100)  // Green for pitch (上下)
-        val rollColor = Color.rgb(0, 0, 160)       // Deep blue for roll (旋轉)
+        val rollColor = Color.rgb(100, 100, 255)   // Light blue for roll (旋轉)
 
         // Draw rotation indicators with larger size
         drawRotationIndicators(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
 
         // Draw 3D coordinate system with increased axis length
-        val axisLength = 200f * scaleFactor  // Increased from 150f to 200f
-        val points = calculate3DPoints(facePose.yaw, facePose.pitch, facePose.roll, axisLength)
-        val projectedPoints = project3DPoints(points, noseX, noseY)
-        draw3DAxes(canvas, projectedPoints, yawColor, pitchColor, rollColor)
+        // val axisLength = 200f * scaleFactor  // Increased from 150f to 200f
+        // val points = calculate3DPoints(facePose.yaw, facePose.pitch, facePose.roll, axisLength)
+        // val projectedPoints = project3DPoints(points, noseX, noseY)
+        //draw3DAxes(canvas, projectedPoints, yawColor, pitchColor, rollColor)
 
         // Draw orientation text
         drawOrientationText(canvas, noseX, noseY, facePose, yawColor, pitchColor, rollColor)
@@ -499,7 +499,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     ): Array<FloatArray> {
         return points.map { point ->
             // Simple perspective projection
-            val scale = 1f / (point[2] + 2f)  // Add offset to prevent division by zero
+            val scale = 1f / (point[2] / (500f * scaleFactor) + 1f)  // Add offset to prevent division by zero
             floatArrayOf(
                 point[0] * scale + centerX,
                 point[1] * scale + centerY
@@ -985,7 +985,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // Draw gaze visualization
         val gazeX = baseTextX
         val gazeY = baseTextY + lineHeight * 9
-        drawGazeVisualization1(canvas, facePose, gazeX, gazeY)
+        drawGazeVisualization(canvas, facePose, gazeX, gazeY)
 
         // Draw head pose cube visualization centered in the pitch area
         // val cubeX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
@@ -1126,30 +1126,68 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
     private fun drawHeadPoseCube(
         canvas: Canvas,
+        faceLandmarks: List<NormalizedLandmark>,
         facePose: FacePoseAnalyzer.FacePose,
         centerX: Float,
         centerY: Float
     ) {
-        val cubeSize = 40f * scaleFactor // Increased size of the cube
+        // Calculate bounding box of the landmarks in 3D
+        var minX = Float.MAX_VALUE
+        var maxX = Float.MIN_VALUE
+        var minY = Float.MAX_VALUE
+        var maxY = Float.MIN_VALUE
+        var minZ = Float.MAX_VALUE
+        var maxZ = Float.MIN_VALUE
+
+        faceLandmarks.forEach { landmark ->
+            minX = min(minX, landmark.x())
+            maxX = max(maxX, landmark.x())
+            minY = min(minY, landmark.y())
+            maxY = max(maxY, landmark.y())
+            minZ = min(minZ, landmark.z())
+            maxZ = max(maxZ, landmark.z())
+        }
+
+        // Scale the bounding box dimensions
+        val cubeWidth = (maxX - minX) * imageWidth * scaleFactor
+        val cubeHeight = (maxY - minY) * imageHeight * scaleFactor
+        val cubeDepth = (maxZ - minZ) * 500f * scaleFactor // Scale Z differently as it's relative
+
+        val sphereRadius = 15f * scaleFactor
         val yawColor = Color.rgb(255, 100, 100)    // Light red for yaw
         val pitchColor = Color.rgb(100, 255, 100)  // Light green for pitch
         val rollColor = Color.rgb(100, 100, 255)   // Light blue for roll
 
-        // Convert angles to radians (using original pose for this visualization)
+        // Calculate gaze direction from iris positions
+        val leftIris = facePose.irisPositions.leftIris
+        val rightIris = facePose.irisPositions.rightIris
+        
+        // Calculate average iris position relative to center (0.5, 0.5)
+        val avgIrisX = ((leftIris.x + rightIris.x) / 2 - 0.5f) * 2 // Scale to [-1, 1]
+        val avgIrisY = ((leftIris.y + rightIris.y) / 2 - 0.5f) * 2 // Scale to [-1, 1]
+        
+        // Convert iris position to angles (full 360 degrees)
+        val irisYaw = avgIrisX * 180f // Scale to [-180, 180] range
+        val irisPitch = avgIrisY * 180f // Scale to [-180, 180] range
+        
+        // Use iris-based angles for cube rotation
         val yawRad = Math.toRadians(facePose.yaw.toDouble())
         val pitchRad = Math.toRadians(facePose.pitch.toDouble())
         val rollRad = Math.toRadians(facePose.roll.toDouble())
 
-        // Define cube vertices
+        // Position cube so the center is at the nose tip
+        // val cubeShiftZ = -cubeSize / 2f // Shift the cube backward by half its depth
+
+        // Define cube vertices with front face centered at (0,0,0) in local space
         val vertices = arrayOf(
-            floatArrayOf(-cubeSize, -cubeSize, -cubeSize),  // 0: left-bottom-back (-X, -Y, -Z)
-            floatArrayOf(cubeSize, -cubeSize, -cubeSize),   // 1: right-bottom-back (+X, -Y, -Z)
-            floatArrayOf(cubeSize, cubeSize, -cubeSize),    // 2: right-top-back (+X, +Y, -Z)
-            floatArrayOf(-cubeSize, cubeSize, -cubeSize),   // 3: left-top-back (-X, +Y, -Z)
-            floatArrayOf(-cubeSize, -cubeSize, cubeSize),   // 4: left-bottom-front (-X, -Y, +Z)
-            floatArrayOf(cubeSize, -cubeSize, cubeSize),    // 5: right-bottom-front (+X, -Y, +Z)
-            floatArrayOf(cubeSize, cubeSize, cubeSize),     // 6: right-top-front (+X, +Y, +Z)
-            floatArrayOf(-cubeSize, cubeSize, cubeSize)     // 7: left-top-front (-X, +Y, +Z)
+            floatArrayOf(-cubeWidth / 2f, -cubeHeight / 2f, 0f),  // 0: left-bottom-front
+            floatArrayOf(cubeWidth / 2f, -cubeHeight / 2f, 0f),   // 1: right-bottom-front
+            floatArrayOf(cubeWidth / 2f, cubeHeight / 2f, 0f),    // 2: right-top-front
+            floatArrayOf(-cubeWidth / 2f, cubeHeight / 2f, 0f),   // 3: left-top-front
+            floatArrayOf(-cubeWidth / 2f, -cubeHeight / 2f, -cubeDepth), // 4: left-bottom-back
+            floatArrayOf(cubeWidth / 2f, -cubeHeight / 2f, -cubeDepth),  // 5: right-bottom-back
+            floatArrayOf(cubeWidth / 2f, cubeHeight / 2f, -cubeDepth),   // 6: right-top-back
+            floatArrayOf(-cubeWidth / 2f, cubeHeight / 2f, -cubeDepth)   // 7: left-top-back
         )
 
         // Apply rotations
@@ -1181,7 +1219,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Project vertices to 2D with scaling
         val projectedVertices = rotatedVertices.map { vertex ->
-             val scale = 1f / (vertex[2] / (500f * scaleFactor) + 1f) // Adjust perspective with scaleFactor
+            // Adjust perspective scaling factor for a better visual fit
+            val scale = 1f / (vertex[2] / (500f * scaleFactor) + 1f) // Adjusted back to 500f
             floatArrayOf(
                 vertex[0] * scale + centerX,
                 vertex[1] * scale + centerY
@@ -1190,27 +1229,26 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Define faces (vertex indices in order)
         val faces = arrayOf(
-            intArrayOf(0, 1, 2, 3), // Back face (-Z)
-            intArrayOf(4, 5, 6, 7), // Front face (+Z)
+            intArrayOf(0, 1, 2, 3), // Front face (based on new vertex order)
+            intArrayOf(4, 5, 6, 7), // Back face (based on new vertex order)
             intArrayOf(0, 4, 7, 3), // Left face (-X)
             intArrayOf(1, 5, 6, 2), // Right face (+X)
             intArrayOf(3, 2, 6, 7), // Top face (+Y)
             intArrayOf(0, 1, 5, 4)  // Bottom face (-Y)
         )
 
-        // Define colors for each face based on original orientation
+        // Define colors for each face
         val faceColors = arrayOf(
-            rollColor, // Back face (-Z) -> Roll
-            rollColor, // Front face (+Z) -> Roll
-            yawColor,  // Left face (-X) -> Yaw
-            yawColor,  // Right face (+X) -> Yaw
-            pitchColor, // Top face (+Y) -> Pitch
-            pitchColor  // Bottom face (-Y) -> Pitch
+            Color.BLACK, // Front face
+            Color.WHITE,  // Back face
+            Color.WHITE,   // Left face
+            Color.WHITE,   // Right face
+            Color.WHITE, // Top face
+            Color.WHITE  // Bottom face
         )
 
         // Draw faces (simple painter's algorithm - draw back faces first)
         val faceDepth = faces.map { face -> projectedVertices[face[0]][1] + projectedVertices[face[2]][1] }.withIndex().sortedByDescending { it.value }
-
 
         val facePaint = Paint().apply {
             style = Paint.Style.FILL
@@ -1220,7 +1258,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         faceDepth.forEach { (faceIndex, _) ->
             val face = faces[faceIndex]
             facePaint.color = faceColors[faceIndex]
-            facePaint.alpha = 50 // Semi-transparent
+            // Adjust alpha for the front face to make it cover landmarks more
+            facePaint.alpha = if (faceIndex == 0) 200 else 100 // Front face (index 0) is less transparent
 
             val path = android.graphics.Path()
             path.moveTo(projectedVertices[face[0]][0], projectedVertices[face[0]][1])
@@ -1231,205 +1270,106 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             canvas.drawPath(path, facePaint)
         }
 
-        // Draw edges (optional, for better definition)
-         val linePaint = Paint().apply {
-             strokeWidth = 2f * scaleFactor // Line thickness
-             color = Color.BLACK // Edge color
-             style = Paint.Style.STROKE
-             isAntiAlias = true
-         }
+        // Draw edges
+        val linePaint = Paint().apply {
+            strokeWidth = 2f * scaleFactor
+            color = Color.argb(150, 255, 255, 255) // Semi-transparent white for edges
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+        }
 
-         val edges = arrayOf(
-             0 to 1, 1 to 2, 2 to 3, 3 to 0, // Back face
-             4 to 5, 5 to 6, 6 to 7, 7 to 4, // Front face
-             0 to 4, 1 to 5, 2 to 6, 3 to 7  // Connecting edges
-         )
+        val edges = arrayOf(
+            0 to 1, 1 to 2, 2 to 3, 3 to 0, // Front face
+            4 to 5, 5 to 6, 6 to 7, 7 to 4, // Back face
+            0 to 4, 1 to 5, 2 to 6, 3 to 7  // Connecting edges
+        )
 
-         edges.forEach { (startIdx, endIdx) ->
-             val p1 = projectedVertices[startIdx]
-             val p2 = projectedVertices[endIdx]
-             canvas.drawLine(p1[0], p1[1], p2[0], p2[1], linePaint)
-         }
+        edges.forEach { (startIdx, endIdx) ->
+            val p1 = projectedVertices[startIdx]
+            val p2 = projectedVertices[endIdx]
+            canvas.drawLine(p1[0], p1[1], p2[0], p2[1], linePaint)
+        }
 
-if(!showHeadPoseAxes)
-{
-        // Draw reference axes (solid)
-        val referenceAxisLength = cubeSize * 1.5f // Length of reference axes
-        val referencePaint = Paint().apply {
+        // Draw rotating sphere in center
+        val spherePaint = Paint().apply {
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+
+        // Draw main sphere
+        spherePaint.color = Color.argb(200, 255, 255, 255)
+        // Position the sphere at the nose tip's 2D projection
+        canvas.drawCircle(centerX, centerY, sphereRadius, spherePaint)
+
+        // Draw rotation indicators on sphere
+        val indicatorPaint = Paint().apply {
             strokeWidth = 2f * scaleFactor
             style = Paint.Style.STROKE
             isAntiAlias = true
         }
 
-        referencePaint.color = yawColor // X-axis (Yaw) reference
-        canvas.drawLine(centerX - referenceAxisLength, centerY, centerX + referenceAxisLength, centerY, referencePaint)
-        referencePaint.color = pitchColor // Y-axis (Pitch) reference
-        canvas.drawLine(centerX, centerY - referenceAxisLength, centerX, centerY + referenceAxisLength, referencePaint)
-        referencePaint.color = rollColor // Z-axis (Roll) reference (drawn in perspective)
-        val originProj = floatArrayOf(centerX, centerY)
-        val zAxisRefEndProj = projectPointSimple(floatArrayOf(0f, 0f, referenceAxisLength), centerX, centerY, scaleFactor)
-        canvas.drawLine(originProj[0], originProj[1], zAxisRefEndProj[0], zAxisRefEndProj[1], referencePaint)
+        // Draw yaw indicator (horizontal circle)
+        indicatorPaint.color = yawColor
+        // Position indicator at the nose tip's 2D projection
+        canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, indicatorPaint)
 
-        // Draw actual head pose axes (dashed)
-        val actualAxisLength = cubeSize * 2.0f // Length of actual axes
-        val actualPaint = Paint().apply {
-            strokeWidth = 3f * scaleFactor
-            style = Paint.Style.STROKE
-            isAntiAlias = true
-            pathEffect = DashPathEffect(floatArrayOf(15f * scaleFactor, 10f * scaleFactor), 0f)
-        }
+        // Draw pitch indicator (vertical circle)
+        indicatorPaint.color = pitchColor
+        canvas.save()
+        // Rotate around the nose tip's 2D projection
+        canvas.rotate(90f, centerX, centerY)
+        canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, indicatorPaint)
+        canvas.restore()
 
-        // Calculate end points of rotated axes
-        val rotatedOrigin = floatArrayOf(0f, 0f, 0f)
-        val rotatedXEnd = rotatePoint(floatArrayOf(actualAxisLength, 0f, 0f), yawRad, pitchRad, rollRad)
-        val rotatedYEnd = rotatePoint(floatArrayOf(0f, -actualAxisLength, 0f), yawRad, pitchRad, rollRad) // Y is down
-        val rotatedZEnd = rotatePoint(floatArrayOf(0f, 0f, actualAxisLength), yawRad, pitchRad, rollRad)
+        // Draw roll indicator (rotating line)
+        indicatorPaint.color = rollColor
+        canvas.save()
+        // Rotate around the nose tip's 2D projection
+        canvas.rotate(facePose.roll, centerX, centerY)
+        canvas.drawLine(
+            centerX - sphereRadius, // Start point X (relative to nose tip center)
+            centerY, // Start point Y (relative to nose tip center)
+            centerX + sphereRadius, // End point X (relative to nose tip center)
+            centerY, // End point Y (relative to nose tip center)
+            indicatorPaint
+        )
+        canvas.restore()
 
-        // Project rotated axis endpoints
-        val originProjActual = projectPointSimple(rotatedOrigin, centerX, centerY, scaleFactor)
-        val xAxisEndProjActual = projectPointSimple(rotatedXEnd, centerX, centerY, scaleFactor)
-        val yAxisEndProjActual = projectPointSimple(rotatedYEnd, centerX, centerY, scaleFactor)
-        val zAxisEndProjActual = projectPointSimple(rotatedZEnd, centerX, centerY, scaleFactor)
-
-        actualPaint.color = yawColor // X-axis (Yaw)
-        canvas.drawLine(originProjActual[0], originProjActual[1], xAxisEndProjActual[0], xAxisEndProjActual[1], actualPaint)
-        actualPaint.color = pitchColor // Y-axis (Pitch)
-        canvas.drawLine(originProjActual[0], originProjActual[1], yAxisEndProjActual[0], yAxisEndProjActual[1], actualPaint)
-        actualPaint.color = rollColor // Z-axis (Roll)
-        canvas.drawLine(originProjActual[0], originProjActual[1], zAxisEndProjActual[0], zAxisEndProjActual[1], actualPaint)
-
-        // Draw angle values
+        // Draw angle values on sphere
         val textPaint = Paint().apply {
-            textSize = 15f * scaleFactor  // Text size
+            textSize = 12f * scaleFactor
             isAntiAlias = true
+            color = Color.BLACK
         }
 
         // Draw yaw value
         textPaint.color = yawColor
         canvas.drawText(
-            "Yaw: ${String.format("%.1f", facePose.yaw)}°", // Use original Yaw
-            centerX - cubeSize,
-            centerY - cubeSize - 20f * scaleFactor, // Position above the cube
+            "Y:${String.format("%.0f", facePose.yaw)}°",
+            // Position text relative to the nose tip's 2D projection
+            centerX - sphereRadius * 0.7f, // Adjusted position
+            centerY - sphereRadius * 0.7f, // Adjusted position
             textPaint
         )
 
         // Draw pitch value
         textPaint.color = pitchColor
         canvas.drawText(
-            "Pitch: ${String.format("%.1f", facePose.pitch)}°", // Use original Pitch
-            centerX - cubeSize,
-            centerY - cubeSize - 40f * scaleFactor, // Position above the yaw value
+            "P:${String.format("%.0f", facePose.pitch)}°",
+            // Position text relative to the nose tip's 2D projection
+            centerX + sphereRadius * 0.7f, // Adjusted position
+            centerY - sphereRadius * 0.7f, // Adjusted position
             textPaint
         )
 
         // Draw roll value
         textPaint.color = rollColor
         canvas.drawText(
-            "Roll: ${String.format("%.1f", facePose.roll)}°", // Use original Roll
-            centerX - cubeSize,
-            centerY - cubeSize - 60f * scaleFactor, // Position above the pitch value
+            "R:${String.format("%.0f", facePose.roll)}°", // Keep original roll
+            centerX,
+            // Position text relative to the nose tip's 2D projection
+            centerY + sphereRadius * 0.7f, // Adjusted position
             textPaint
-        )
-        }
-    }
-
-     private fun rotatePoint(
-         point: FloatArray,
-         yawRad: Double,
-         pitchRad: Double,
-         rollRad: Double
-     ): FloatArray {
-         var x = point[0]
-         var y = point[1]
-         var z = point[2]
-
-         // Roll rotation around Z
-         val rollX = x * Math.cos(rollRad) - y * Math.sin(rollRad)
-         val rollY = x * Math.sin(rollRad) + y * Math.cos(rollRad)
-         x = rollX.toFloat()
-         y = rollY.toFloat()
-
-         // Pitch rotation around X
-         val pitchY = y * Math.cos(pitchRad) - z * Math.sin(pitchRad)
-         val pitchZ = y * Math.sin(pitchRad) + z * Math.cos(pitchRad)
-         y = pitchY.toFloat()
-         z = pitchZ.toFloat()
-
-         // Yaw rotation around Y
-         val yawX = x * Math.cos(yawRad) + z * Math.sin(yawRad)
-         val yawZ = -x * Math.sin(yawRad) + z * Math.cos(yawRad)
-         x = yawX.toFloat()
-         z = yawZ.toFloat()
-
-         return floatArrayOf(x, y, z)
-     }
-
-     private fun projectPointSimple(
-         point: FloatArray,
-         centerX: Float,
-         centerY: Float,
-         scaleFactor: Float
-     ): FloatArray {
-         // Simple perspective projection helper
-         val scale = 1f / (point[2] / (500f * scaleFactor) + 1f) // Adjust 500f for perspective strength
-         val projectedX = point[0] * scale + centerX
-         val projectedY = point[1] * scale + centerY
-         return floatArrayOf(projectedX, projectedY)
-     }
-
-    private fun drawGazeVisualization1(
-        canvas: Canvas,
-        facePose: FacePoseAnalyzer.FacePose,
-        startX: Float,
-        startY: Float
-    ) {
-        val size = 200f
-        val centerX = startX + size / 2
-        val centerY = startY + size / 2
-
-        // Draw eye positions
-        val eyePaint = Paint().apply {
-            color = Color.BLUE
-            style = Paint.Style.FILL
-            isAntiAlias = true
-        }
-
-        // Draw left eye
-        val leftEyeX = centerX - size * 0.3f
-        val leftEyeY = centerY
-        canvas.drawCircle(leftEyeX, leftEyeY, 20f, eyePaint)
-
-        // Draw right eye
-        val rightEyeX = centerX + size * 0.3f
-        val rightEyeY = centerY
-        canvas.drawCircle(rightEyeX, rightEyeY, 20f, eyePaint)
-
-        // Draw gaze direction
-        val gazePaint = Paint().apply {
-            color = Color.RED
-            strokeWidth = 6f
-            isAntiAlias = true
-        }
-
-        // Calculate gaze direction based on iris positions
-        val leftIris = facePose.irisPositions.leftIris
-        val rightIris = facePose.irisPositions.rightIris
-
-        // Draw gaze lines
-        val gazeLength = size * 0.8f
-        canvas.drawLine(
-            leftEyeX,
-            leftEyeY,
-            leftEyeX + (leftIris.x - 0.5f) * gazeLength,
-            leftEyeY + (leftIris.y - 0.5f) * gazeLength,
-            gazePaint
-        )
-        canvas.drawLine(
-            rightEyeX,
-            rightEyeY,
-            rightEyeX + (rightIris.x - 0.5f) * gazeLength,
-            rightEyeY + (rightIris.y - 0.5f) * gazeLength,
-            gazePaint
         )
     }
 
@@ -1572,26 +1512,26 @@ if(!showHeadPoseAxes)
             isAntiAlias = true
         }
         textPaint.color = yawColor
-        canvas.drawText(
+            canvas.drawText(
             "Y: ${String.format("%.1f", facePose.yaw)}°",
             projected[1][0] + 5f * scaleFactor,
             projected[1][1],
-            textPaint
-        )
+                textPaint
+            )
         textPaint.color = pitchColor
-        canvas.drawText(
+            canvas.drawText(
             "P: ${String.format("%.1f", facePose.pitch)}°",
             projected[2][0],
             projected[2][1] - 5f * scaleFactor,
-            textPaint
-        )
+                textPaint
+            )
         textPaint.color = rollColor
-        canvas.drawText(
+            canvas.drawText(
             "R: ${String.format("%.1f", facePose.roll)}°",
             projected[3][0] + 5f * scaleFactor,
             projected[3][1] + 5f * scaleFactor,
-            textPaint
-        )
+                textPaint
+            )
     }
 
     private fun drawImprovedHeadPoseAxes(
@@ -1733,7 +1673,7 @@ if(!showHeadPoseAxes)
             isAntiAlias = true
         }
         textPaint.color = yawColor
-        canvas.drawText(
+            canvas.drawText(
             "Y: ${String.format("%.1f", facePose.improvedYaw)}°",
             projected[1][0] + 5f * scaleFactor,
             projected[1][1],
@@ -1751,8 +1691,8 @@ if(!showHeadPoseAxes)
             "R: ${String.format("%.1f", facePose.improvedRoll)}°",
             projected[3][0] + 5f * scaleFactor,
             projected[3][1] + 5f * scaleFactor,
-            textPaint
-        )
+                textPaint
+            )
 
         // Draw 3D box visualization at the same position as the face mesh
         // draw3DBoxVisualization(canvas, facePose, centerX, centerY)
