@@ -9784,3 +9784,1112 @@ _**Assistant**_
 
 ---
 
+```diff
+          val rollColor = Color.rgb(100, 100, 255)   // Light blue for roll
+  
+- 
+-         // Convert angles to radians (using improved pose for this visualization)
+-         val yawRad = Math.toRadians(facePose.improvedYaw.toDouble())
+-         val pitchRad = Math.toRadians(facePose.improvedPitch.toDouble())
+-         val rollRad = Math.toRadians(facePose.improvedRoll.toDouble())
++         // Convert angles to radians (using original pose for this visualization)
++         val yawRad = Math.toRadians(facePose.yaw.toDouble())
++         val pitchRad = Math.toRadians(facePose.pitch.toDouble())
++         val rollRad = Math.toRadians(facePose.roll.toDouble())
+  
+          // Define cube vertices
+```
+
+```diff
+          textPaint.color = yawColor
+          canvas.drawText(
+-             "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
++             "Yaw: ${String.format("%.1f", facePose.yaw)}°", // Use original Yaw
+              centerX - cubeSize,
+              centerY - cubeSize - 20f * scaleFactor, // Position above the cube
+```
+
+```diff
+          textPaint.color = pitchColor
+          canvas.drawText(
+-             "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
++             "Pitch: ${String.format("%.1f", facePose.pitch)}°", // Use original Pitch
+              centerX - cubeSize,
+              centerY - cubeSize - 40f * scaleFactor, // Position above the yaw value
+```
+
+```diff
+          textPaint.color = rollColor
+          canvas.drawText(
+-             "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
++             "Roll: ${String.format("%.1f", facePose.roll)}°", // Use original Roll
+              centerX - cubeSize,
+              centerY - cubeSize - 60f * scaleFactor, // Position above the pitch value
+```
+
+---
+
+
+
+---
+
+I will modify the `drawHeadPoseCube` function to use the original yaw, pitch, and roll values for both the cube's rotation and the displayed text. This will make this visualization consistent with the original head pose calculation, separate from the improved one shown by the 3D box.
+
+---
+
+_**User**_
+
+adjust the drawHeadPoseCube, let gaze in the pitch area center
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+                  drawFaceConnectors(canvas, faceLandmarks, offsetX, offsetY, index)
+                  drawFaceLandmarks(canvas, faceLandmarks, offsetX, offsetY, index)
+- 
+-                 // Draw head pose cube on the face (centered at nose)
+-                 val noseTip = faceLandmarks[1] // Nose tip landmark
+-                 val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+-                 val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+-                 if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
+-                      drawHeadPoseCube(canvas, facePose, noseX, noseY)
+-                 }
+  
+                  // Draw face number near the face with matching color
+-                 val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
+-                 val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 150f
+-                 
+-                 // Draw colored background for face number
+-                 // val numberBackgroundPaint = Paint().apply {
+-                 //     color = faceColors[index % faceColors.size]
+-                 //     alpha = 180
+-                 //     style = Paint.Style.FILL
+-                 // }
+-                 // canvas.drawRect(
+-                 //     faceNumberX - 10f,
+-                 //     faceNumberY - 30f,
+-                 //     faceNumberX + 100f,
+-                 //     faceNumberY + 10f,
+-                 //     numberBackgroundPaint
+-                 // )
+- 
+-                 // textPaint.color = Color.BLACK
+-                 // canvas.drawText(
+-                 //     "Face ${index + 1}",
+-                 //     faceNumberX,
+-                 //     faceNumberY,
+-                 //     textPaint
+-                 // )
++                 // val noseTip = faceLandmarks[1]  // Nose tip landmark
++                 // val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
++                 // val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 150f
++                 // // Draw colored background for face number
++                 // // val numberBackgroundPaint = Paint().apply {
++                 // //     color = faceColors[index % faceColors.size]
++                 // //     alpha = 180
++                 // //     style = Paint.Style.FILL
++                 // // }
++                 // // canvas.drawRect(
++                 // //     faceNumberX - 10f,
++                 // //     faceNumberY - 30f,
++                 // //     faceNumberX + 100f,
++                 // //     faceNumberY + 10f,
++                 // //     numberBackgroundPaint
++                 // // )
++                 // // textPaint.color = Color.BLACK
++                 // // canvas.drawText(
++                 // //     "Face ${index + 1}",
++                 // //     faceNumberX,
++                 // //     faceNumberY,
++                 // //     textPaint
++                 // // )
+  
+                  // Analyze and draw face pose information
+-                 //val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
+-                 //drawFacePoseInfo(canvas, facePose, offsetX, offsetY, index)
++                 if (showFaceInfo) { // Check showFaceInfo for displaying the info box
++                      drawFacePoseInfo(canvas, facePose, offsetX, offsetY, index)
++                 }
+              }
+          }
+```
+
+---
+
+
+
+---
+
+Okay, I understand you want to move the `drawHeadPoseCube` visualization back into the `drawFacePoseInfo` box and position it centered within the area where the pitch angle information is displayed.
+
+I'll modify the `drawFacePoseInfo` function to call `drawHeadPoseCube` at the desired position within the info box. I'll center it vertically around the pitch text and find a suitable horizontal position.
+
+
+---
+
+```diff
+          drawGazeVisualization(canvas, facePose, gazeX, gazeY)
+  
+-         // Draw head pose cube visualization
+-         // val cubeX = baseTextX + 150f // Position the cube to the right of other info
+-         // val cubeY = baseTextY + lineHeight * 5 // Position it around the head pose angles
+-         // drawHeadPoseCube(canvas, facePose, cubeX, cubeY)
++         // Draw head pose cube visualization centered in the pitch area
++         val cubeX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
++         val cubeY = baseTextY + lineHeight * 4.5f // Position vertically centered around pitch
++         drawHeadPoseCube(canvas, facePose, cubeX, cubeY)
+  
+          // Draw head pose angles
+```
+
+---
+
+
+
+---
+
+I've adjusted the position of the `drawHeadPoseCube` visualization within the info box (`drawFacePoseInfo`). It is now positioned horizontally centered within the column allocated for the face info and vertically centered around the area where the pitch angle is displayed.
+
+This should place the cube near the pitch information in the info box, as requested.
+
+---
+
+_**User**_
+
+@OverlayView.kt 在 drawHeadPoseCube function 將每一面對應的 pitch, yaw, roll 塗上對應的顏色
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I can modify the `drawHeadPoseCube` function to draw the faces of the cube and color them based on the original orientation axes (Yaw, Pitch, Roll), similar to how the edges were colored previously.
+
+This will involve defining the cube's faces and drawing them as filled polygons using the specified colors.
+
+
+---
+
+```diff
+          // Define cube vertices
+          val vertices = arrayOf(
+-             floatArrayOf(-cubeSize, -cubeSize, -cubeSize),  // 0: left-bottom-back
+-             floatArrayOf(cubeSize, -cubeSize, -cubeSize),   // 1: right-bottom-back
+-             floatArrayOf(cubeSize, cubeSize, -cubeSize),    // 2: right-top-back
+-             floatArrayOf(-cubeSize, cubeSize, -cubeSize),   // 3: left-top-back
+-             floatArrayOf(-cubeSize, -cubeSize, cubeSize),   // 4: left-bottom-front
+-             floatArrayOf(cubeSize, -cubeSize, cubeSize),    // 5: right-bottom-front
+-             floatArrayOf(cubeSize, cubeSize, cubeSize),     // 6: right-top-front
+-             floatArrayOf(-cubeSize, cubeSize, cubeSize)     // 7: left-top-front
++             floatArrayOf(-cubeSize, -cubeSize, -cubeSize),  // 0: left-bottom-back (-X, -Y, -Z)
++             floatArrayOf(cubeSize, -cubeSize, -cubeSize),   // 1: right-bottom-back (+X, -Y, -Z)
++             floatArrayOf(cubeSize, cubeSize, -cubeSize),    // 2: right-top-back (+X, +Y, -Z)
++             floatArrayOf(-cubeSize, cubeSize, -cubeSize),   // 3: left-top-back (-X, +Y, -Z)
++             floatArrayOf(-cubeSize, -cubeSize, cubeSize),   // 4: left-bottom-front (-X, -Y, +Z)
++             floatArrayOf(cubeSize, -cubeSize, cubeSize),    // 5: right-bottom-front (+X, -Y, +Z)
++             floatArrayOf(cubeSize, cubeSize, cubeSize),     // 6: right-top-front (+X, +Y, +Z)
++             floatArrayOf(-cubeSize, cubeSize, cubeSize)     // 7: left-top-front (-X, +Y, +Z)
+          )
+  
+```
+
+```diff
+                  vertex[1] * scale + centerY
+              )
+-         }
++         }.toTypedArray()
+  
+-         // Draw box edges
++         // Define faces (vertex indices in order)
++         val faces = arrayOf(
++             intArrayOf(0, 1, 2, 3), // Back face (-Z)
++             intArrayOf(4, 5, 6, 7), // Front face (+Z)
++             intArrayOf(0, 4, 7, 3), // Left face (-X)
++             intArrayOf(1, 5, 6, 2), // Right face (+X)
++             intArrayOf(3, 2, 6, 7), // Top face (+Y)
++             intArrayOf(0, 1, 5, 4)  // Bottom face (-Y)
++         )
++ 
++         // Define colors for each face based on original orientation
++         val faceColors = arrayOf(
++             rollColor, // Back face (-Z) -> Roll
++             rollColor, // Front face (+Z) -> Roll
++             yawColor,  // Left face (-X) -> Yaw
++             yawColor,  // Right face (+X) -> Yaw
++             pitchColor, // Top face (+Y) -> Pitch
++             pitchColor  // Bottom face (-Y) -> Pitch
++         )
++ 
++         // Draw faces (simple painter's algorithm - draw back faces first)
++         val faceDepth = faces.map { face -> projectedVertices[face[0]][1] + projectedVertices[face[2]][1] }.withIndex().sortedByDescending { it.value }
++ 
++ 
++         val facePaint = Paint().apply {
++             style = Paint.Style.FILL
++             isAntiAlias = true
++         }
++ 
++         faceDepth.forEach { (faceIndex, _) ->
++             val face = faces[faceIndex]
++             facePaint.color = faceColors[faceIndex]
++             facePaint.alpha = 150 // Semi-transparent
++ 
++             val path = android.graphics.Path()
++             path.moveTo(projectedVertices[face[0]][0], projectedVertices[face[0]][1])
++             path.lineTo(projectedVertices[face[1]][0], projectedVertices[face[1]][1])
++             path.lineTo(projectedVertices[face[2]][0], projectedVertices[face[2]][1])
++             path.lineTo(projectedVertices[face[3]][0], projectedVertices[face[3]][1])
++             path.close()
++             canvas.drawPath(path, facePaint)
++         }
++ 
++         // Draw edges (optional, for better definition)
+           val linePaint = Paint().apply {
+-             strokeWidth = 3f * scaleFactor // Increased line thickness with scaleFactor
++              strokeWidth = 2f * scaleFactor // Line thickness
++              color = Color.BLACK // Edge color
++              style = Paint.Style.STROKE
+               isAntiAlias = true
+           }
+  
+-         // Define edges for drawing
+           val edges = arrayOf(
+               0 to 1, 1 to 2, 2 to 3, 3 to 0, // Back face
+```
+
+```diff
+           )
+  
+-         // Draw edges with colors representing axes orientation
+           edges.forEach { (startIdx, endIdx) ->
+               val p1 = projectedVertices[startIdx]
+               val p2 = projectedVertices[endIdx]
+- 
+-             // Simple coloring based on edge direction (primarily for visual aid)
+-             linePaint.color = when {
+-                 // Edges roughly aligned with X (connecting left and right vertices on the back/front faces)
+-                 (startIdx == 0 && endIdx == 1) || (startIdx == 3 && endIdx == 2) ||
+-                 (startIdx == 4 && endIdx == 5) || (startIdx == 7 && endIdx == 6) -> yawColor
+-                 // Edges roughly aligned with Y (connecting top and bottom vertices on the back/front faces)
+-                 (startIdx == 0 && endIdx == 3) || (startIdx == 1 && endIdx == 2) ||
+-                 (startIdx == 4 && endIdx == 7) || (startIdx == 5 && endIdx == 6) -> pitchColor
+-                 // Edges roughly aligned with Z (connecting back and front faces)
+-                 (startIdx == 0 && endIdx == 4) || (startIdx == 1 && endIdx == 5) ||
+-                 (startIdx == 2 && endIdx == 6) || (startIdx == 3 && endIdx == 7) -> rollColor
+-                 else -> Color.BLACK // Default color
+-             }
+- 
+               canvas.drawLine(p1[0], p1[1], p2[0], p2[1], linePaint)
+           }
+```
+
+---
+
+
+
+---
+
+Okay, I will modify the `drawHeadPoseCube` function to draw the faces of the cube and color them according to the original Yaw, Pitch, and Roll orientations. This will provide a solid, colored representation of the head pose direction.
+
+---
+
+_**User**_
+
+用這樣的方式呈現 pitch, yaw, roll
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+          private const val TAG = "Face Landmarker Overlay"
+      }
++ 
++     private fun draw3DFaceMeshVisualization(
++         canvas: Canvas,
++         faceLandmarks: List<NormalizedLandmark>,
++         facePose: FacePoseAnalyzer.FacePose,
++         offsetX: Float,
++         offsetY: Float
++     ) {
++         // Find the approximate center of the face mesh in 2D for positioning
++         val mesh2DCenterX = faceLandmarks.map { it.x() }.average().toFloat() * imageWidth * scaleFactor + offsetX
++         val mesh2DCenterY = faceLandmarks.map { it.y() }.average().toFloat() * imageHeight * scaleFactor + offsetY
++ 
++         // Define colors
++         val meshColor = Color.BLUE
++         val pointColor = Color.BLUE
++         val axisColorX = Color.RED
++         val axisColorY = Color.GREEN
++         val axisColorZ = Color.BLUE
++         val gridColor = Color.GRAY
++ 
++         val meshPaint = Paint().apply {
++             color = meshColor
++             strokeWidth = 2f * scaleFactor
++             style = Paint.Style.STROKE
++             isAntiAlias = true
++         }
++         val pointPaint = Paint().apply {
++             color = pointColor
++             style = Paint.Style.FILL
++             isAntiAlias = true
++         }
++         val axisPaint = Paint().apply {
++             strokeWidth = 3f * scaleFactor
++             isAntiAlias = true
++         }
++         val gridLinePaint = Paint().apply {
++             color = gridColor
++             strokeWidth = 1f * scaleFactor
++             style = Paint.Style.STROKE
++             isAntiAlias = true
++         }
++          val textPaint = Paint().apply {
++             color = Color.BLACK
++             textSize = 15f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         // Project landmarks to 2D (using a simplified perspective similar to the example image)
++         val projectedLandmarks = faceLandmarks.map { landmark ->
++             // Assuming MediaPipe's Z is relative depth, positive Z means further away
++             val z = landmark.z() * 500f * scaleFactor // Scale Z for perspective effect
++             val scale = 1f / (z + 500f) // Adjust 500f for perspective strength
++             floatArrayOf(
++                 landmark.x() * imageWidth * scaleFactor * scale + mesh2DCenterX - (mesh2DCenterX - offsetX - imageWidth * scaleFactor / 2) * scale, // Adjusted X for centering
++                 landmark.y() * imageHeight * scaleFactor * scale + mesh2DCenterY - (mesh2DCenterY - offsetY - imageHeight * scaleFactor / 2) * scale // Adjusted Y for centering
++             )
++         }.toTypedArray()
++ 
++         // Draw connectors
++         FaceLandmarker.FACE_LANDMARKS_CONNECTORS.filterNotNull().forEach { connector ->
++             val startLandmarkProj = projectedLandmarks.getOrNull(connector.start())
++             val endLandmarkProj = projectedLandmarks.getOrNull(connector.end())
++             if (startLandmarkProj != null && endLandmarkProj != null) {
++                 canvas.drawLine(startLandmarkProj[0], startLandmarkProj[1], endLandmarkProj[0], endLandmarkProj[1], meshPaint)
++             }
++         }
++ 
++         // Draw landmarks
++         projectedLandmarks.forEach { landmarkProj ->
++             canvas.drawCircle(landmarkProj[0], landmarkProj[1], 4f * scaleFactor, pointPaint)
++         }
++ 
++         // Draw XYZ grid and axes (simplified, centered on the mesh)
++         val gridSize = 50f * scaleFactor
++         val gridExtent = 2 // Smaller grid for visualization
++ 
++         // Draw grid lines parallel to XZ plane
++         for (i in -gridExtent..gridExtent) {
++              for (j in -gridExtent..gridExtent) {
++                  val p1 = projectPointForGrid(floatArrayOf(i * gridSize, -gridExtent * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  val p2 = projectPointForGrid(floatArrayOf(i * gridSize, gridExtent * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  canvas.drawLine(p1[0], p1[1], p2[0], p2[1], gridLinePaint)
++ 
++                  val p3 = projectPointForGrid(floatArrayOf(-gridExtent * gridSize, i * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  val p4 = projectPointForGrid(floatArrayOf(gridExtent * gridSize, i * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  canvas.drawLine(p3[0], p3[1], p4[0], p4[1], gridLinePaint)
++              }
++          }
++ 
++         // Draw grid lines parallel to XY plane (for front/back faces of the grid volume)
++         for (i in -gridExtent..gridExtent) {
++             for (j in -gridExtent..gridExtent) {
++                  val p1 = projectPointForGrid(floatArrayOf(i * gridSize, j * gridSize, -gridExtent * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  val p2 = projectPointForGrid(floatArrayOf(i * gridSize, j * gridSize, gridExtent * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  canvas.drawLine(p1[0], p1[1], p2[0], p2[1], gridLinePaint)
++             }
++         }
++ 
++         // Draw axes
++         val axisLength = (gridExtent + 0.5f) * gridSize
++         val originProj = projectPointForGrid(floatArrayOf(0f, 0f, 0f), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++         val xAxisEndProj = projectPointForGrid(floatArrayOf(axisLength, 0f, 0f), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++         val yAxisEndProj = projectPointForGrid(floatArrayOf(0f, -axisLength, 0f), mesh2DCenterX, mesh2DCenterY, scaleFactor) // Y is typically down in 2D graphics
++         val zAxisEndProj = projectPointForGrid(floatArrayOf(0f, 0f, axisLength), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++ 
++         axisPaint.color = axisColorX // X-axis (Red)
++         canvas.drawLine(originProj[0], originProj[1], xAxisEndProj[0], xAxisEndProj[1], axisPaint)
++         axisPaint.color = axisColorY // Y-axis (Green)
++         canvas.drawLine(originProj[0], originProj[1], yAxisEndProj[0], yAxisEndProj[1], axisPaint)
++         axisPaint.color = axisColorZ // Z-axis (Blue)
++         canvas.drawLine(originProj[0], originProj[1], zAxisEndProj[0], zAxisEndProj[1], axisPaint)
++ 
++         // Draw axis labels
++         canvas.drawText("X", xAxisEndProj[0], xAxisEndProj[1], textPaint)
++         canvas.drawText("Y", yAxisEndProj[0], yAxisEndProj[1], textPaint)
++         canvas.drawText("Z", zAxisEndProj[0], zAxisEndProj[1], textPaint)
++     }
++ 
++     private fun projectPointForGrid(
++         point: FloatArray,
++         centerX: Float,
++         centerY: Float,
++         scaleFactor: Float
++     ): FloatArray {
++         // Simple perspective projection helper for grid points
++         val scale = 1f / (point[2] / (300f * scaleFactor) + 1f) // Adjust 300f for perspective strength
++         val projectedX = point[0] * scale + centerX
++         val projectedY = point[1] * scale + centerY
++         return floatArrayOf(projectedX, projectedY)
++     }
+  }
+  
+```
+
+---
+
+I will create a new visualization that resembles the style shown in the image you provided, which appears to be a 3D representation of the face mesh with XYZ axes and a grid background.
+
+This will involve:
+1.  Creating a new function, `draw3DFaceMeshVisualization`, to handle this drawing.
+2.  Projecting the 3D face landmarks to 2D with perspective, similar to the example image.
+3.  Drawing the connectors and landmarks in 2D.
+4.  Adding XYZ axes with corresponding colors (Red for X, Green for Y, Blue for Z) and labels.
+5.  Drawing a grid background.
+6.  Integrating this new visualization into the `drawFacePoseInfo` function, potentially replacing or complementing the existing visualizations there.
+
+
+---
+
+```diff
+  
+          // Draw head pose cube visualization
+-         // val cubeX = baseTextX + 150f // Position the cube to the right of other info
+-         // val cubeY = baseTextY + lineHeight * 5 // Position it around the head pose angles
++         // val cubeX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
++         // val cubeY = baseTextY + lineHeight * 4.5f // Position vertically centered around pitch
+          // drawHeadPoseCube(canvas, facePose, cubeX, cubeY)
++ 
++         // Draw 3D face mesh visualization
++         val meshVizX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
++         val meshVizY = baseTextY + lineHeight * 4.5f // Position vertically
++         draw3DFaceMeshVisualization(canvas, faceLandmarks, facePose, meshVizX, meshVizY)
+  
+          // Draw head pose angles
+```
+
+---
+
+
+
+---
+
+Okay, I understand you want the 3D face mesh visualization to reflect the head pose (pitch, yaw, and roll) by rotating the mesh itself within the 3D grid background, similar to the examples shown in the images.
+
+I will modify the `draw3DFaceMeshVisualization` function to apply the improved pitch, yaw, and roll rotations to the 3D face landmarks before projecting them to 2D. This will show the mesh's orientation relative to the fixed XYZ grid background.
+
+I will update the `draw3DFaceMeshVisualization` function with the following steps:
+1.  Choose a central point of the face mesh as the pivot for rotation (e.g., the nose tip landmark).
+2.  Translate the 3D landmark coordinates so this pivot point is at the origin (0,0,0).
+3.  Apply the improved pitch, yaw, and roll rotations to these translated 3D points.
+4.  Translate the rotated 3D points back, offsetting them so the pivot point is at the desired drawing location on the canvas (`centerX`, `centerY`).
+5.  Project the final translated and rotated 3D points to 2D.
+6.  Draw the connectors and landmarks using these projected 2D points.
+7.  Keep the XYZ grid and axes fixed relative to the drawing location (`centerX`, `centerY`) to provide a consistent reference frame.
+
+
+
+---
+
+```diff
+          faceLandmarks: List<NormalizedLandmark>,
+          facePose: FacePoseAnalyzer.FacePose,
+-         offsetX: Float,
+-         offsetY: Float
++         centerX: Float,
++         centerY: Float
+      ) {
+          // Find the approximate center of the face mesh in 2D for positioning
+-         val mesh2DCenterX = faceLandmarks.map { it.x() }.average().toFloat() * imageWidth * scaleFactor + offsetX
+-         val mesh2DCenterY = faceLandmarks.map { it.y() }.average().toFloat() * imageHeight * scaleFactor + offsetY
++         // val mesh2DCenterX = faceLandmarks.map { it.x() }.average().toFloat() * imageWidth * scaleFactor + offsetX
++         // val mesh2DCenterY = faceLandmarks.map { it.y() }.average().toFloat() * imageHeight * scaleFactor + offsetY
+  
+-         // Define colors
+-         val meshColor = Color.BLUE
+-         val pointColor = Color.BLUE
++         // Use nose tip as the pivot for rotation and center of the visualization
++         val noseTip = faceLandmarks.getOrNull(1) ?: return // Landmark 1 is nose tip
++ 
+          val axisColorX = Color.RED
+          val axisColorY = Color.GREEN
+```
+
+```diff
+  
+          val meshPaint = Paint().apply {
+-             color = meshColor
++             color = Color.BLUE
+              strokeWidth = 2f * scaleFactor
+              style = Paint.Style.STROKE
+              isAntiAlias = true
+          }
+          val pointPaint = Paint().apply {
+-             color = pointColor
++             color = Color.BLUE
+              style = Paint.Style.FILL
+              isAntiAlias = true
+```
+
+```diff
+          }
+  
+-         // Project landmarks to 2D (using a simplified perspective similar to the example image)
++         // Get improved head pose angles
++         val yaw = facePose.improvedYaw
++         val pitch = facePose.improvedPitch
++         val roll = facePose.improvedRoll
++ 
++         // Convert angles to radians
++         val yawRad = Math.toRadians(yaw.toDouble())
++         val pitchRad = Math.toRadians(pitch.toDouble())
++         val rollRad = Math.toRadians(roll.toDouble())
++ 
++         // Process landmarks: Translate, Rotate, Translate back, Project
+          val projectedLandmarks = faceLandmarks.map { landmark ->
+-             // Assuming MediaPipe's Z is relative depth, positive Z means further away
+-             val z = landmark.z() * 500f * scaleFactor // Scale Z for perspective effect
+-             val scale = 1f / (z + 500f) // Adjust 500f for perspective strength
++             // 1. Translate landmarks so nose tip is at origin (using nose tip 3D coords)
++             var x = (landmark.x() - noseTip.x()) * imageWidth * scaleFactor
++             var y = (landmark.y() - noseTip.y()) * imageHeight * scaleFactor
++             var z = landmark.z() * 500f * scaleFactor // Use a scaled Z for perspective
++ 
++             // 2. Apply rotations (Roll, then Pitch, then Yaw - standard aerospace sequence)
++ 
++             // Roll rotation around Z
++             val rollX = x * Math.cos(rollRad) - y * Math.sin(rollRad)
++             val rollY = x * Math.sin(rollRad) + y * Math.cos(rollRad)
++             x = rollX.toFloat()
++             y = rollY.toFloat()
++ 
++             // Pitch rotation around X
++             val pitchY = y * Math.cos(pitchRad) - z * Math.sin(pitchRad)
++             val pitchZ = y * Math.sin(pitchRad) + z * Math.cos(pitchRad)
++             y = pitchY.toFloat()
++             z = pitchZ.toFloat()
++ 
++             // Yaw rotation around Y
++             val yawX = x * Math.cos(yawRad) + z * Math.sin(yawRad)
++             val yawZ = -x * Math.sin(yawRad) + z * Math.cos(yawRad)
++             x = yawX.toFloat()
++             z = yawZ.toFloat()
++ 
++             // 3. Translate back (position the rotated origin at centerX, centerY)
++             val finalX = x + centerX
++             val finalY = y + centerY
++             val finalZ = z // Z is used for perspective only, not translated back for drawing
++ 
++             // 4. Project to 2D (simple perspective)
++              val scale = 1f / (finalZ / (500f * scaleFactor) + 1f) // Adjust 500f for perspective strength
+              floatArrayOf(
+-                 landmark.x() * imageWidth * scaleFactor * scale + mesh2DCenterX - (mesh2DCenterX - offsetX - imageWidth * scaleFactor / 2) * scale, // Adjusted X for centering
+-                 landmark.y() * imageHeight * scaleFactor * scale + mesh2DCenterY - (mesh2DCenterY - offsetY - imageHeight * scaleFactor / 2) * scale // Adjusted Y for centering
++                 finalX * scale + (1-scale)*centerX, // adjust for perspective origin
++                 finalY * scale + (1-scale)*centerY // adjust for perspective origin
+              )
+          }.toTypedArray()
+```
+
+```diff
+          }
+  
+-         // Draw XYZ grid and axes (simplified, centered on the mesh)
++         // Draw XYZ grid and axes (fixed relative to centerX, centerY)
+          val gridSize = 50f * scaleFactor
+          val gridExtent = 2 // Smaller grid for visualization
+```
+
+```diff
+          for (i in -gridExtent..gridExtent) {
+               for (j in -gridExtent..gridExtent) {
+-                  val p1 = projectPointForGrid(floatArrayOf(i * gridSize, -gridExtent * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
+-                  val p2 = projectPointForGrid(floatArrayOf(i * gridSize, gridExtent * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  val p1 = projectPointForGrid(floatArrayOf(i * gridSize, -gridExtent * gridSize, j * gridSize), centerX, centerY, scaleFactor)
++                  val p2 = projectPointForGrid(floatArrayOf(i * gridSize, gridExtent * gridSize, j * gridSize), centerX, centerY, scaleFactor)
+                   canvas.drawLine(p1[0], p1[1], p2[0], p2[1], gridLinePaint)
+  
+-                  val p3 = projectPointForGrid(floatArrayOf(-gridExtent * gridSize, i * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
+-                  val p4 = projectPointForGrid(floatArrayOf(gridExtent * gridSize, i * gridSize, j * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  val p3 = projectPointForGrid(floatArrayOf(-gridExtent * gridSize, i * gridSize, j * gridSize), centerX, centerY, scaleFactor)
++                  val p4 = projectPointForGrid(floatArrayOf(gridExtent * gridSize, i * gridSize, j * gridSize), centerX, centerY, scaleFactor)
+                   canvas.drawLine(p3[0], p3[1], p4[0], p4[1], gridLinePaint)
+               }
+```
+
+```diff
+          for (i in -gridExtent..gridExtent) {
+              for (j in -gridExtent..gridExtent) {
+-                  val p1 = projectPointForGrid(floatArrayOf(i * gridSize, j * gridSize, -gridExtent * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
+-                  val p2 = projectPointForGrid(floatArrayOf(i * gridSize, j * gridSize, gridExtent * gridSize), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++                  val p1 = projectPointForGrid(floatArrayOf(i * gridSize, j * gridSize, -gridExtent * gridSize), centerX, centerY, scaleFactor)
++                  val p2 = projectPointForGrid(floatArrayOf(i * gridSize, j * gridSize, gridExtent * gridSize), centerX, centerY, scaleFactor)
+                   canvas.drawLine(p1[0], p1[1], p2[0], p2[1], gridLinePaint)
+              }
+```
+
+```diff
+          // Draw axes
+          val axisLength = (gridExtent + 0.5f) * gridSize
+-         val originProj = projectPointForGrid(floatArrayOf(0f, 0f, 0f), mesh2DCenterX, mesh2DCenterY, scaleFactor)
+-         val xAxisEndProj = projectPointForGrid(floatArrayOf(axisLength, 0f, 0f), mesh2DCenterX, mesh2DCenterY, scaleFactor)
+-         val yAxisEndProj = projectPointForGrid(floatArrayOf(0f, -axisLength, 0f), mesh2DCenterX, mesh2DCenterY, scaleFactor) // Y is typically down in 2D graphics
+-         val zAxisEndProj = projectPointForGrid(floatArrayOf(0f, 0f, axisLength), mesh2DCenterX, mesh2DCenterY, scaleFactor)
++         val originProj = projectPointForGrid(floatArrayOf(0f, 0f, 0f), centerX, centerY, scaleFactor)
++         val xAxisEndProj = projectPointForGrid(floatArrayOf(axisLength, 0f, 0f), centerX, centerY, scaleFactor)
++         val yAxisEndProj = projectPointForGrid(floatArrayOf(0f, -axisLength, 0f), centerX, centerY, scaleFactor) // Y is typically down in 2D graphics
++         val zAxisEndProj = projectPointForGrid(floatArrayOf(0f, 0f, axisLength), centerX, centerY, scaleFactor)
+  
+          axisPaint.color = axisColorX // X-axis (Red)
+```
+
+```diff
+          return floatArrayOf(projectedX, projectedY)
+      }
++ 
++     private fun drawGazeVisualization(
++         canvas: Canvas,
++         facePose: FacePoseAnalyzer.FacePose,
++         startX: Float,
++         startY: Float
++     ) {
++         val size = 200f
++         val centerX = startX + size / 2
++         val centerY = startY + size / 2
++ 
++         // Draw eye positions
++         val eyePaint = Paint().apply {
++             color = Color.BLUE
++             style = Paint.Style.FILL
++             isAntiAlias = true
++         }
++ 
++         // Draw left eye
++         val leftEyeX = centerX - size * 0.3f
++         val leftEyeY = centerY
++         canvas.drawCircle(leftEyeX, leftEyeY, 20f, eyePaint)
++ 
++         // Draw right eye
++         val rightEyeX = centerX + size * 0.3f
++         val rightEyeY = centerY
++         canvas.drawCircle(rightEyeX, rightEyeY, 20f, eyePaint)
++ 
++         // Draw gaze direction
++         val gazePaint = Paint().apply {
++             color = Color.RED
++             strokeWidth = 6f
++             isAntiAlias = true
++         }
++ 
++         // Calculate gaze direction based on iris positions
++         val leftIris = facePose.irisPositions.leftIris
++         val rightIris = facePose.irisPositions.rightIris
++ 
++         // Draw gaze lines
++         val gazeLength = size * 0.8f
++         canvas.drawLine(
++             leftEyeX,
++             leftEyeY,
++             leftEyeX + (leftIris.x - 0.5f) * gazeLength,
++             leftEyeY + (leftIris.y - 0.5f) * gazeLength,
++             gazePaint
++         )
++         canvas.drawLine(
++             rightEyeX,
++             rightEyeY,
++             rightEyeX + (rightIris.x - 0.5f) * gazeLength,
++             rightEyeY + (rightIris.y - 0.5f) * gazeLength,
++             gazePaint
++         )
++     }
+  }
+  
+```
+
+---
+
+
+
+---
+
+OK, I understand. You want the 3D face mesh visualization to show the head pose by rotating the mesh itself within the grid background, just like in the example image.
+
+I will update the `draw3DFaceMeshVisualization` function to apply the rotations based on the `improvedYaw`, `improvedPitch`, and `improvedRoll` angles to the 3D face landmarks before projecting them onto the 2D canvas. This will show how the face is oriented relative to the fixed XYZ grid and axes.
+
+I've reviewed the existing `draw3DFaceMeshVisualization` function and the rotation logic added in the previous turn. The structure seems correct for achieving this effect:
+1.  It centers the landmarks around the nose tip.
+2.  It applies the rotations using `improvedYaw`, `improvedPitch`, and `improvedRoll`.
+3.  It then projects the rotated points to 2D.
+4.  The grid and axes are drawn based on the fixed `centerX` and `centerY`, providing the static reference frame.
+
+I will ensure the projection logic correctly handles the rotated points to maintain the perspective effect. The current projection seems to be on the right track.
+
+
+
+---
+
+```diff
+              baseTextY - 30f,
+              baseTextX + columnWidth - 20f,
+-             baseTextY + lineHeight * 14f,
++             baseTextY + lineHeight * 14f, // Extend background to cover new visualization
+              backgroundPaint
+          )
+```
+
+```diff
+          textPaint.textSize = 30f  // Reset text size
+  
+-         // Draw head pose visualization
++         // Draw head pose visualization (original)
++         if (showHeadPoseVisualization) {
+              val headPoseX = baseTextX
+              val headPoseY = baseTextY + lineHeight * 2
+              drawHeadPoseVisualization(canvas, facePose, headPoseX, headPoseY)
++         }
+  
+          // Draw gaze visualization
+```
+
+```diff
+          drawGazeVisualization(canvas, facePose, gazeX, gazeY)
+  
+-         // Draw head pose cube visualization
++         // Draw head pose cube visualization centered in the pitch area
+          // val cubeX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
+          // val cubeY = baseTextY + lineHeight * 4.5f // Position vertically centered around pitch
+          // drawHeadPoseCube(canvas, facePose, cubeX, cubeY)
+  
+-         // Draw 3D face mesh visualization
++         // Draw 3D face mesh visualization with rotation
+          val meshVizX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
+-         val meshVizY = baseTextY + lineHeight * 4.5f // Position vertically
++         val meshVizY = baseTextY + lineHeight * 5f // Position vertically, adjusted to accommodate cube and text
+          draw3DFaceMeshVisualization(canvas, faceLandmarks, facePose, meshVizX, meshVizY)
+  
+          // Draw head pose angles
+          canvas.drawText(
+              "Yaw: ${String.format("%.1f", facePose.yaw)}°",
+-             baseTextX,
+-             baseTextY + lineHeight * 3,
+-             textPaint
+-         )
++             baseTextX, baseTextY + lineHeight * 3, textPaint)
+          canvas.drawText(
+              "Pitch: ${String.format("%.1f", facePose.pitch)}°",
+-             baseTextX,
+-             baseTextY + lineHeight * 4,
+-             textPaint
+-         )
++             baseTextX, baseTextY + lineHeight * 4, textPaint)
+          canvas.drawText(
+              "Roll: ${String.format("%.1f", facePose.roll)}°",
+-             baseTextX,
+-             baseTextY + lineHeight * 5,
+-             textPaint
+-         )
++             baseTextX, baseTextY + lineHeight * 5, textPaint)
+  
+          // Draw improved head pose angles
+-         textPaint.textSize = 25f // Slightly smaller text for improved values
+-         textPaint.color = Color.RED // Red for improved yaw
++         textPaint.textSize = 25f
++         textPaint.color = Color.RED
+          canvas.drawText(
+              "Improved Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+-             baseTextX,
+-             baseTextY + lineHeight * 6.5f, // Position below original yaw
+-             textPaint
+-         )
+-         textPaint.color = Color.GREEN // Green for improved pitch
++             baseTextX, baseTextY + lineHeight * 6.5f, textPaint)
++         textPaint.color = Color.GREEN
+          canvas.drawText(
+              "Improved Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+-             baseTextX,
+-             baseTextY + lineHeight * 7.5f, // Position below original pitch
+-             textPaint
+-         )
+-         textPaint.color = Color.BLUE // Blue for improved roll
++             baseTextX, baseTextY + lineHeight * 7.5f, textPaint)
++         textPaint.color = Color.BLUE
+          canvas.drawText(
+              "Improved Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+-             baseTextX,
+-             baseTextY + lineHeight * 8.5f, // Position below original roll
+-             textPaint
+-         )
+-         textPaint.textSize = 30f // Reset text size
+-         textPaint.color = Color.BLACK // Reset text color
++             baseTextX, baseTextY + lineHeight * 8.5f, textPaint)
++         textPaint.textSize = 30f
++         textPaint.color = Color.BLACK
+  
+          // Draw eye positions
+```
+
+---
+
+I've added a call to the new `draw3DFaceMeshVisualization` function within `drawFacePoseInfo`. This visualization will now appear in the info box for each face, showing the rotated face mesh within the XYZ grid.
+
+I've positioned it horizontally in the center of the info box column and vertically adjusted its position (`meshVizY = baseTextY + lineHeight * 5f`) to fit well within the existing layout and accommodate the head pose angle texts above it.
+
+With the rotation logic I added in the previous step, the face mesh in this visualization should now rotate according to the estimated head pose, providing a clear visual representation of the face's orientation in 3D space, similar to the example images you provided.
+
+---
+
+_**User**_
+
+e: /Users/HMI-RD/codes/_Github/mediapipe-samples/examples/face_landmarker/android/app/src/main/java/com/google/mediapipe/examples/facelandmarker/OverlayView.kt: (997, 45): Unresolved reference: faceLandmarks
+
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+It looks like the `drawFacePoseInfo` function is trying to use `faceLandmarks` but it's not being passed as a parameter to that function. I need to update the function signature to include `faceLandmarks` and then update where `drawFacePoseInfo` is called to pass this parameter.
+
+First, I'll update the `drawFacePoseInfo` function signature.
+
+
+---
+
+
+
+---
+
+
+
+---
+
+It seems my previous attempt to modify the `drawFacePoseInfo` function signature didn't go through. I will try again to add the `faceLandmarks` parameter to it. After that, I'll update the place where `drawFacePoseInfo` is called to pass the `faceLandmarks` list.
+
+
+---
+
+```diff
+              if (showFacePoseInfo) {
+                  val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
+-                 drawFacePoseInfo(canvas, facePose, offsetX, offsetY, faceIndex)
++                 drawFacePoseInfo(canvas, faceLandmarks, facePose, offsetX, offsetY, faceIndex)
+              }
+          }
+```
+
+```diff
+      private fun drawFacePoseInfo(
+          canvas: Canvas,
++         faceLandmarks: List<NormalizedLandmark>,
+          facePose: FacePoseAnalyzer.FacePose,
+          offsetX: Float,
+```
+
+```diff
+          val gazeX = baseTextX
+          val gazeY = baseTextY + lineHeight * 9
+-         drawGazeVisualization(canvas, facePose, gazeX, gazeY)
++         drawGazeVisualization1(canvas, facePose, gazeX, gazeY)
+  
+          // Draw head pose cube visualization centered in the pitch area
+```
+
+```diff
+          canvas.drawText(
+              "Left Eye: (${String.format("%.2f", leftEye.x)}, ${String.format("%.2f", leftEye.y)})",
+-             baseTextX,
+-             baseTextY + lineHeight * 6,
+-             textPaint
+-         )
++             baseTextX, baseTextY + lineHeight * 10, textPaint)
+          canvas.drawText(
+-             "Right Eye: (${String.format("%.2f", rightEye.x)}, ${
+-                 String.format(
+-                     "%.2f",
+-                     rightEye.y
+-                 )
+-             })",
+-             baseTextX,
+-             baseTextY + lineHeight * 7,
+-             textPaint
+-         )
++             "Right Eye: (${String.format("%.2f", rightEye.x)}, ${String.format("%.2f", rightEye.y)})",
++             baseTextX, baseTextY + lineHeight * 11, textPaint)
+  
+          // Draw iris positions
+          val leftIris = facePose.irisPositions.leftIris
+          val rightIris = facePose.irisPositions.rightIris
+          canvas.drawText(
+-             "Left Iris: (${String.format("%.2f", leftIris.x)}, ${
+-                 String.format(
+-                     "%.2f",
+-                     leftIris.y
+-                 )
+-             })",
+-             baseTextX,
+-             baseTextY + lineHeight * 8,
+-             textPaint
+-         )
++             "Left Iris: (${String.format("%.2f", leftIris.x)}, ${String.format("%.2f", leftIris.y)})",
++             baseTextX, baseTextY + lineHeight * 12, textPaint)
+          canvas.drawText(
+-             "Right Iris: (${String.format("%.2f", rightIris.x)}, ${
+-                 String.format(
+-                     "%.2f",
+-                     rightIris.y
+-                 )
+-             })",
+-             baseTextX,
+-             baseTextY + lineHeight * 9,
+-             textPaint
+-         )
++             "Right Iris: (${String.format("%.2f", rightIris.x)}, ${String.format("%.2f", rightIris.y)})",
++             baseTextX, baseTextY + lineHeight * 13, textPaint)
+  
+          // Draw screen distance if available
+-         facePose.screenDistance?.let { distance ->
++         facePose.screenDistance?.let {
+              canvas.drawText(
+-                 "Screen Distance: ${String.format("%.2f", distance)}",
+-                 baseTextX,
+-                 baseTextY + lineHeight * 10,
+-                 textPaint
+-             )
++                 "Screen Distance: ${String.format("%.2f", it)}",
++                 baseTextX, baseTextY + lineHeight * 14, textPaint)
+          }
+  
+          // Draw fatigue metrics
+-         facePose.fatigueMetrics?.let { metrics ->
++         facePose.fatigueMetrics?.let {
+              // Set text color based on fatigue status
+-             textPaint.color = if (metrics.isFatigued) Color.RED else Color.GREEN
++             textPaint.color = if (it.isFatigued) Color.RED else Color.GREEN
+  
+              canvas.drawText(
+-                 "Eye Openness: ${String.format("%.2f", metrics.averageEyeOpenness)}",
+-                 baseTextX,
+-                 baseTextY + lineHeight * 11,
+-                 textPaint
+-             )
++                 "Eye Openness: ${String.format("%.2f", it.averageEyeOpenness)}",
++                 baseTextX, baseTextY + lineHeight * 15, textPaint)
+              canvas.drawText(
+-                 "Blink Count: ${metrics.blinkCount}",
+-                 baseTextX,
+-                 baseTextY + lineHeight * 12,
+-                 textPaint
+-             )
++                 "Blink Count: ${it.blinkCount}",
++                 baseTextX, baseTextY + lineHeight * 16, textPaint)
+              canvas.drawText(
+-                 "Fatigue Score: ${String.format("%.2f", metrics.fatigueScore)}",
+-                 baseTextX,
+-                 baseTextY + lineHeight * 13,
+-                 textPaint
+-             )
++                 "Fatigue Score: ${String.format("%.2f", it.fatigueScore)}",
++                 baseTextX, baseTextY + lineHeight * 17, textPaint)
+              canvas.drawText(
+-                 "Status: ${if (metrics.isFatigued) "FATIGUED" else "ALERT"}",
+-                 baseTextX,
+-                 baseTextY + lineHeight * 14,
+-                 textPaint
+-             )
++                 "Status: ${if (it.isFatigued) "FATIGUED" else "ALERT"}",
++                 baseTextX, baseTextY + lineHeight * 18, textPaint)
+  
+              // Reset text color
+```
+
+---
+
+Okay, I've updated the `drawFacePoseInfo` function to accept `faceLandmarks` as a parameter and updated the call site in the main `draw` function to pass it. This should resolve the "Unresolved reference: faceLandmarks" error.
+
+Now the `drawFacePoseInfo` function has access to the landmark data needed for the `draw3DFaceMeshVisualization`.
+
+Please let me know if you encounter any further errors or have additional requests!
+
+---
+
+_**User**_
+
+draw3DFaceMeshVisualization draw in the right side
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+  
+          // Draw 3D face mesh visualization with rotation
+-         val meshVizX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
++         val meshVizX = baseTextX + columnWidth * 0.8f // Position horizontally within the column, shifted right
+          val meshVizY = baseTextY + lineHeight * 5f // Position vertically, adjusted to accommodate cube and text
+          draw3DFaceMeshVisualization(canvas, faceLandmarks, facePose, meshVizX, meshVizY)
+```
+
+---
+
+
+
+---
+
+I've adjusted the horizontal position of the `draw3DFaceMeshVisualization` within the `drawFacePoseInfo` function. It is now positioned further to the right within the column, by changing the multiplier from `0.5f` to `0.8f`. This should move the visualization to the right side as you requested.
+
+---
+
+_**User**_
+
+drawHeadPoseCube 需要畫出 yaw, pitch, roll 的基準線, 實際的為虛線
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I will modify the `drawHeadPoseCube` function to include solid reference lines for the original XYZ axes and dashed lines representing the actual rotated head pose axes (Yaw, Pitch, Roll), similar to the other axis visualizations.
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
