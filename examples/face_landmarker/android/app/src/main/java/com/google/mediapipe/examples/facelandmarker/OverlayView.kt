@@ -169,7 +169,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 val noseTip = faceLandmarks[1] // Nose tip landmark
                 val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
                 val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
-                if (showHeadPoseVisualization) { // Use HeadPoseVisualization flag for the cube on face
+                if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
                      drawHeadPoseCube(canvas, facePose, noseX, noseY)
                 }
 
@@ -218,7 +218,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     ) {
 
         // Draw XYZ grid background
-        drawXYZGrid(canvas, faceLandmarks, offsetX, offsetY)
+        // drawXYZGrid(canvas, faceLandmarks, offsetX, offsetY)
 
         if (showFaceLandmarks) {
             // Use different color for each face
@@ -903,9 +903,9 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             // Draw simple head pose axes at nose tip
             if (showHeadPoseAxes) {
                 val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
-                drawSimpleHeadPoseAxes(canvas, facePose, noseX, noseY)
+                drawSimpleHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
                 // Draw improved head pose axes and 3D box
-                drawImprovedHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
+                // drawImprovedHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
             }
             
             // Draw simple gaze lines from nose tip
@@ -915,19 +915,19 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             }
             
             // Draw simple face info near nose tip
-            if (showFacePoseInfo) {
-                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
-                drawSimpleFaceInfo(canvas, noseX, noseY, faceIndex, facePose)
-            }
+            // if (showFacePoseInfo) {
+            //     val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
+            //     drawSimpleFaceInfo(canvas, noseX, noseY, faceIndex, facePose)
+            // }
         } else {
             // In non-simple mode, also draw the 3D box visualization
-            if (showGaze) {
-                val noseTip = faceLandmarks[1]  // Nose tip landmark
-                val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
-                val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
-                val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
-                draw3DBoxVisualization(canvas, facePose, noseX, noseY)
-            }
+            // if (showGaze) {
+            //     val noseTip = faceLandmarks[1]  // Nose tip landmark
+            //     val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+            //     val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+            //     val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
+            //     draw3DBoxVisualization(canvas, facePose, noseX, noseY)
+            // }
         }
     }
 
@@ -1183,9 +1183,9 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         centerY: Float
     ) {
         val cubeSize = 50f * scaleFactor // Increased size of the cube
-        val yawColor = Color.RED    // Red for yaw (X-axis)
-        val pitchColor = Color.GREEN  // Green for pitch (Y-axis)
-        val rollColor = Color.BLUE       // Blue for roll (Z-axis)
+        val yawColor = Color.rgb(255, 100, 100)    // Light red for yaw
+        val pitchColor = Color.rgb(100, 255, 100)  // Light green for pitch
+        val rollColor = Color.rgb(100, 100, 255)   // Light blue for roll
 
         // Convert angles to radians (using original pose for this visualization)
         val yawRad = Math.toRadians(facePose.yaw.toDouble())
@@ -1274,6 +1274,39 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
             canvas.drawLine(p1[0], p1[1], p2[0], p2[1], linePaint)
         }
+
+        // Draw angle values
+        val textPaint = Paint().apply {
+            textSize = 15f * scaleFactor  // Text size
+            isAntiAlias = true
+        }
+
+        // Draw yaw value
+        textPaint.color = yawColor
+        canvas.drawText(
+            "Yaw: ${String.format("%.1f", facePose.yaw)}°", // Use original Yaw
+            centerX - cubeSize,
+            centerY - cubeSize - 20f * scaleFactor, // Position above the cube
+            textPaint
+        )
+
+        // Draw pitch value
+        textPaint.color = pitchColor
+        canvas.drawText(
+            "Pitch: ${String.format("%.1f", facePose.pitch)}°", // Use original Pitch
+            centerX - cubeSize,
+            centerY - cubeSize - 40f * scaleFactor, // Position above the yaw value
+            textPaint
+        )
+
+        // Draw roll value
+        textPaint.color = rollColor
+        canvas.drawText(
+            "Roll: ${String.format("%.1f", facePose.roll)}°", // Use original Roll
+            centerX - cubeSize,
+            centerY - cubeSize - 60f * scaleFactor, // Position above the pitch value
+            textPaint
+        )
     }
 
     private fun drawGazeVisualization(
@@ -1654,7 +1687,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         )
 
         // Draw 3D box visualization at the same position as the face mesh
-        draw3DBoxVisualization(canvas, facePose, centerX, centerY)
+        // draw3DBoxVisualization(canvas, facePose, centerX, centerY)
     }
 
     private fun draw3DBoxVisualization(
@@ -1668,7 +1701,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         val boxHeight = 110f * scaleFactor // Reduced height
         val boxDepth = 60f * scaleFactor   // Reduced depth
 
-        val yawColor = Color.rgb(61, 1, 1)    // Dark red for yaw
+        val yawColor = Color.rgb(255, 100, 100)    // Red for yaw (左右)
         val pitchColor = Color.rgb(1, 64, 1)  // Dark green for pitch
         val rollColor = Color.rgb(2, 2, 53)   // Dark blue for roll
 
