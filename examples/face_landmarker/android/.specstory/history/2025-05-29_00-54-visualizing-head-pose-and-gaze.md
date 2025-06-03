@@ -7616,11 +7616,1444 @@ I'll update the `drawSimpleHeadPoseAxes` function to match the style of `drawImp
 
 ---
 
+```diff
+      ) {
+          val axisLength = 60f * scaleFactor
+-         val yawColor = Color.RED
+-         val pitchColor = Color.GREEN
+-         val rollColor = Color.BLUE
++         val yawColor = Color.rgb(255, 100, 100)    // Light red for yaw
++         val pitchColor = Color.rgb(100, 255, 100)  // Light green for pitch
++         val rollColor = Color.rgb(100, 100, 255)   // Light blue for roll
+  
+          // Draw reference lines for zero degrees (base position)
+```
+
+```diff
+          )
+  
+-         // Draw endpoints with larger size
++         // Draw endpoints with smaller size
+          val endpointPaint = Paint().apply {
+              style = Paint.Style.FILL
+```
+
+```diff
+              projected[1][0],
+              projected[1][1],
+-             5f * scaleFactor,  // Increased from 4f
++             3f * scaleFactor,  // Reduced from 5f to 3f
+              endpointPaint
+          )
+          canvas.drawCircle(
+              projected[2][0],
+              projected[2][1],
+-             5f * scaleFactor,  // Increased from 4f
++             3f * scaleFactor,  // Reduced from 5f to 3f
+              endpointPaint
+          )
+          canvas.drawCircle(
+              projected[3][0],
+              projected[3][1],
+-             5f * scaleFactor,  // Increased from 4f
++             3f * scaleFactor,  // Reduced from 5f to 3f
+              endpointPaint
+          )
++ 
++         // Draw angle values
++         val textPaint = Paint().apply {
++             textSize = 12f * scaleFactor
++             isAntiAlias = true
++         }
++         textPaint.color = yawColor
++         canvas.drawText(
++             "Y: ${String.format("%.1f", facePose.yaw)}°",
++             projected[1][0] + 5f * scaleFactor,
++             projected[1][1],
++             textPaint
++         )
++         textPaint.color = pitchColor
++         canvas.drawText(
++             "P: ${String.format("%.1f", facePose.pitch)}°",
++             projected[2][0],
++             projected[2][1] - 5f * scaleFactor,
++             textPaint
++         )
++         textPaint.color = rollColor
++         canvas.drawText(
++             "R: ${String.format("%.1f", facePose.roll)}°",
++             projected[3][0] + 5f * scaleFactor,
++             projected[3][1] + 5f * scaleFactor,
++             textPaint
++         )
+      }
+  
+```
+
+---
+
+I've updated the `drawSimpleHeadPoseAxes` function to match the style of `drawImprovedHeadPoseAxes`. The changes include:
+
+1. Changed the colors to use the same light colors:
+   - Light red for yaw
+   - Light green for pitch
+   - Light blue for roll
+
+2. Made the endpoint circles smaller by reducing their radius from 5f to 3f
+
+3. Added text labels showing the angle values (Y, P, R) next to each axis endpoint, just like in the improved version
+
+4. Kept the same dashed reference lines and axis drawing style
+
+Now both visualizations (simple and improved) will have a consistent look, making it easier to compare them. The only difference will be the angle values they display (original vs improved).
+
+---
+
+_**User**_
+
+draw the improved yaw, pitch, and roll values with 3D box.
+
+---
+
+_**Assistant**_
+
+I'll add a 3D box visualization to show the improved head pose angles. I'll create a new function to draw this 3D box and update the drawing code to include it.
+
+
+---
+
+```diff
+              textPaint
+          )
++ 
++         // Draw 3D box visualization
++         draw3DBoxVisualization(canvas, facePose, centerX, centerY + 100f * scaleFactor)
++     }
++ 
++     private fun draw3DBoxVisualization(
++         canvas: Canvas,
++         facePose: FacePoseAnalyzer.FacePose,
++         centerX: Float,
++         centerY: Float
++     ) {
++         val boxSize = 40f * scaleFactor
++         val yawColor = Color.rgb(247, 38, 38)    // Red for yaw
++         val pitchColor = Color.rgb(43, 244, 43)  // Green for pitch
++         val rollColor = Color.rgb(44, 44, 245)   // Blue for roll
++ 
++         // Convert angles to radians
++         val yawRad = Math.toRadians(facePose.improvedYaw.toDouble())
++         val pitchRad = Math.toRadians(facePose.improvedPitch.toDouble())
++         val rollRad = Math.toRadians(facePose.improvedRoll.toDouble())
++ 
++         // Define box vertices
++         val vertices = arrayOf(
++             floatArrayOf(-boxSize, -boxSize, -boxSize),  // 0: left-bottom-back
++             floatArrayOf(boxSize, -boxSize, -boxSize),   // 1: right-bottom-back
++             floatArrayOf(boxSize, boxSize, -boxSize),    // 2: right-top-back
++             floatArrayOf(-boxSize, boxSize, -boxSize),   // 3: left-top-back
++             floatArrayOf(-boxSize, -boxSize, boxSize),   // 4: left-bottom-front
++             floatArrayOf(boxSize, -boxSize, boxSize),    // 5: right-bottom-front
++             floatArrayOf(boxSize, boxSize, boxSize),     // 6: right-top-front
++             floatArrayOf(-boxSize, boxSize, boxSize)     // 7: left-top-front
++         )
++ 
++         // Apply rotations
++         val rotatedVertices = vertices.map { vertex ->
++             var x = vertex[0]
++             var y = vertex[1]
++             var z = vertex[2]
++ 
++             // Roll rotation around Z
++             val rollX = x * Math.cos(rollRad) - y * Math.sin(rollRad)
++             val rollY = x * Math.sin(rollRad) + y * Math.cos(rollRad)
++             x = rollX.toFloat()
++             y = rollY.toFloat()
++ 
++             // Pitch rotation around X
++             val pitchY = y * Math.cos(pitchRad) - z * Math.sin(pitchRad)
++             val pitchZ = y * Math.sin(pitchRad) + z * Math.cos(pitchRad)
++             y = pitchY.toFloat()
++             z = pitchZ.toFloat()
++ 
++             // Yaw rotation around Y
++             val yawX = x * Math.cos(yawRad) + z * Math.sin(yawRad)
++             val yawZ = -x * Math.sin(yawRad) + z * Math.cos(yawRad)
++             x = yawX.toFloat()
++             z = yawZ.toFloat()
++ 
++             floatArrayOf(x, y, z)
++         }
++ 
++         // Project vertices to 2D
++         val projectedVertices = rotatedVertices.map { vertex ->
++             val scale = 1f / (vertex[2] + 3f)  // Add offset to prevent division by zero
++             floatArrayOf(
++                 vertex[0] * scale + centerX,
++                 vertex[1] * scale + centerY
++             )
++         }
++ 
++         // Draw box edges
++         val linePaint = Paint().apply {
++             strokeWidth = 2f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         // Back face
++         linePaint.color = yawColor
++         drawBoxEdge(canvas, projectedVertices[0], projectedVertices[1], linePaint)
++         drawBoxEdge(canvas, projectedVertices[1], projectedVertices[2], linePaint)
++         drawBoxEdge(canvas, projectedVertices[2], projectedVertices[3], linePaint)
++         drawBoxEdge(canvas, projectedVertices[3], projectedVertices[0], linePaint)
++ 
++         // Front face
++         linePaint.color = pitchColor
++         drawBoxEdge(canvas, projectedVertices[4], projectedVertices[5], linePaint)
++         drawBoxEdge(canvas, projectedVertices[5], projectedVertices[6], linePaint)
++         drawBoxEdge(canvas, projectedVertices[6], projectedVertices[7], linePaint)
++         drawBoxEdge(canvas, projectedVertices[7], projectedVertices[4], linePaint)
++ 
++         // Connecting edges
++         linePaint.color = rollColor
++         drawBoxEdge(canvas, projectedVertices[0], projectedVertices[4], linePaint)
++         drawBoxEdge(canvas, projectedVertices[1], projectedVertices[5], linePaint)
++         drawBoxEdge(canvas, projectedVertices[2], projectedVertices[6], linePaint)
++         drawBoxEdge(canvas, projectedVertices[3], projectedVertices[7], linePaint)
++ 
++         // Draw angle values
++         val textPaint = Paint().apply {
++             textSize = 12f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         // Draw yaw value
++         textPaint.color = yawColor
++         canvas.drawText(
++             "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
++             centerX - boxSize,
++             centerY - boxSize - 10f * scaleFactor,
++             textPaint
++         )
++ 
++         // Draw pitch value
++         textPaint.color = pitchColor
++         canvas.drawText(
++             "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
++             centerX - boxSize,
++             centerY - boxSize - 25f * scaleFactor,
++             textPaint
++         )
++ 
++         // Draw roll value
++         textPaint.color = rollColor
++         canvas.drawText(
++             "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
++             centerX - boxSize,
++             centerY - boxSize - 40f * scaleFactor,
++             textPaint
++         )
++     }
++ 
++     private fun drawBoxEdge(
++         canvas: Canvas,
++         start: FloatArray,
++         end: FloatArray,
++         paint: Paint
++     ) {
++         canvas.drawLine(start[0], start[1], end[0], end[1], paint)
+      }
+  
+```
+
+---
+
+I've added a new 3D box visualization for the improved head pose angles. Here's what I've done:
+
+1. Added a new function `draw3DBoxVisualization` that:
+   - Creates a 3D box with 8 vertices
+   - Applies the improved yaw, pitch, and roll rotations to the box
+   - Projects the 3D vertices to 2D space
+   - Draws the box edges with different colors for each face:
+     - Red for the back face (yaw)
+     - Green for the front face (pitch)
+     - Blue for the connecting edges (roll)
+
+2. The box is drawn below the existing head pose axes visualization (offset by 100 units)
+
+3. Added text labels showing the improved angle values above the box
+
+4. Used the same color scheme as the axes:
+   - Red (247, 38, 38) for yaw
+   - Green (43, 244, 43) for pitch
+   - Blue (44, 44, 245) for roll
+
+5. The box size and line thickness are scaled using the `scaleFactor` to maintain consistency with the rest of the visualization
+
+The 3D box provides a more intuitive visualization of the head pose, as you can see how the face is oriented in 3D space. The box rotates according to the improved yaw, pitch, and roll values, making it easier to understand the head orientation.
+
+---
+
+_**User**_
+
+enlarge the The 3D box and position close to the mproved head pose.
+
+---
+
+_**Assistant**_
+
+I'll modify the 3D box visualization to make it larger and position it closer to the improved head pose axes.
+
+
+---
+
+```diff
+  
+          // Draw 3D box visualization
+-         draw3DBoxVisualization(canvas, facePose, centerX, centerY + 100f * scaleFactor)
++         draw3DBoxVisualization(canvas, facePose, centerX, centerY + 50f * scaleFactor)
+      }
+  
+```
+
+```diff
+          centerY: Float
+      ) {
+-         val boxSize = 40f * scaleFactor
++         val boxSize = 80f * scaleFactor  // Increased from 40f to 80f
+          val yawColor = Color.rgb(247, 38, 38)    // Red for yaw
+          val pitchColor = Color.rgb(43, 244, 43)  // Green for pitch
+```
+
+```diff
+          // Draw box edges
+          val linePaint = Paint().apply {
+-             strokeWidth = 2f * scaleFactor
++             strokeWidth = 3f * scaleFactor  // Increased from 2f to 3f
+              isAntiAlias = true
+          }
+```
+
+```diff
+          // Draw angle values
+          val textPaint = Paint().apply {
+-             textSize = 12f * scaleFactor
++             textSize = 15f * scaleFactor  // Increased from 12f to 15f
+              isAntiAlias = true
+          }
+```
+
+```diff
+              "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+              centerX - boxSize,
+-             centerY - boxSize - 10f * scaleFactor,
++             centerY - boxSize - 15f * scaleFactor,  // Adjusted spacing
+              textPaint
+          )
+```
+
+```diff
+              "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+              centerX - boxSize,
+-             centerY - boxSize - 25f * scaleFactor,
++             centerY - boxSize - 35f * scaleFactor,  // Adjusted spacing
+              textPaint
+          )
+```
+
+```diff
+              "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+              centerX - boxSize,
+-             centerY - boxSize - 40f * scaleFactor,
++             centerY - boxSize - 55f * scaleFactor,  // Adjusted spacing
+              textPaint
+          )
+```
+
+---
+
+I've made the following changes to make the 3D box visualization larger and better positioned:
+
+1. Reduced the vertical offset from the improved head pose axes from 100f to 50f units to position it closer
+
+2. Doubled the box size from 40f to 80f units to make it more prominent
+
+3. Increased the line thickness from 2f to 3f to make the box edges more visible
+
+4. Increased the text size from 12f to 15f to make the angle values more readable
+
+5. Adjusted the spacing between the angle value texts to accommodate the larger text size:
+   - Yaw: -15f units from box
+   - Pitch: -35f units from box
+   - Roll: -55f units from box
+
+These changes will make the 3D box visualization more prominent and easier to read while maintaining its relationship with the improved head pose axes visualization.
+
+---
+
+_**User**_
+
+ modify the 3D box visualization size same as the face mesh size and position
+
+---
+
+_**Assistant**_
+
+I'll modify the 3D box visualization to match the face mesh size and position it relative to the face mesh.
+
+
+---
+
+```diff
+          )
+  
+-         // Draw 3D box visualization
+-         draw3DBoxVisualization(canvas, facePose, centerX, centerY + 50f * scaleFactor)
++         // Draw 3D box visualization at the same position as the face mesh
++         draw3DBoxVisualization(canvas, facePose, centerX, centerY)
+      }
+  
+```
+
+```diff
+          centerY: Float
+      ) {
+-         val boxSize = 50f * scaleFactor  // Increased from 40f to 80f
+-         val yawColor = Color.rgb(61, 1, 1)    // Red for yaw
+-         val pitchColor = Color.rgb(1, 64, 1)  // Green for pitch
+-         val rollColor = Color.rgb(2, 2, 53)   // Blue for roll
++         // Calculate box size based on face mesh size (approximately 1/3 of face width)
++         val boxSize = 100f * scaleFactor  // Adjusted to match face mesh size
++         val yawColor = Color.rgb(61, 1, 1)    // Dark red for yaw
++         val pitchColor = Color.rgb(1, 64, 1)  // Dark green for pitch
++         val rollColor = Color.rgb(2, 2, 53)   // Dark blue for roll
+  
+          // Convert angles to radians
+```
+
+```diff
+          val rollRad = Math.toRadians(facePose.improvedRoll.toDouble())
+  
+-         // Define box vertices
++         // Define box vertices with adjusted proportions to match face shape
+          val vertices = arrayOf(
+-             floatArrayOf(-boxSize, -boxSize, -boxSize),  // 0: left-bottom-back
+-             floatArrayOf(boxSize, -boxSize, -boxSize),   // 1: right-bottom-back
+-             floatArrayOf(boxSize, boxSize, -boxSize),    // 2: right-top-back
+-             floatArrayOf(-boxSize, boxSize, -boxSize),   // 3: left-top-back
+-             floatArrayOf(-boxSize, -boxSize, boxSize),   // 4: left-bottom-front
+-             floatArrayOf(boxSize, -boxSize, boxSize),    // 5: right-bottom-front
+-             floatArrayOf(boxSize, boxSize, boxSize),     // 6: right-top-front
+-             floatArrayOf(-boxSize, boxSize, boxSize)     // 7: left-top-front
++             floatArrayOf(-boxSize, -boxSize * 1.2f, -boxSize),  // 0: left-bottom-back
++             floatArrayOf(boxSize, -boxSize * 1.2f, -boxSize),   // 1: right-bottom-back
++             floatArrayOf(boxSize, boxSize * 1.2f, -boxSize),    // 2: right-top-back
++             floatArrayOf(-boxSize, boxSize * 1.2f, -boxSize),   // 3: left-top-back
++             floatArrayOf(-boxSize, -boxSize * 1.2f, boxSize),   // 4: left-bottom-front
++             floatArrayOf(boxSize, -boxSize * 1.2f, boxSize),    // 5: right-bottom-front
++             floatArrayOf(boxSize, boxSize * 1.2f, boxSize),     // 6: right-top-front
++             floatArrayOf(-boxSize, boxSize * 1.2f, boxSize)     // 7: left-top-front
+          )
+  
+```
+
+```diff
+          }
+  
+-         // Project vertices to 2D
++         // Project vertices to 2D with adjusted perspective
+          val projectedVertices = rotatedVertices.map { vertex ->
+-             val scale = 1f / (vertex[2] + 3f)  // Add offset to prevent division by zero
++             val scale = 1f / (vertex[2] + 4f)  // Increased offset for better perspective
+              floatArrayOf(
+                  vertex[0] * scale + centerX,
+```
+
+```diff
+          }
+  
+-         // Draw box edges
++         // Draw box edges with increased thickness
+          val linePaint = Paint().apply {
+-             strokeWidth = 3f * scaleFactor  // Increased from 2f to 3f
++             strokeWidth = 4f * scaleFactor  // Increased thickness
+              isAntiAlias = true
+          }
+```
+
+```diff
+          drawBoxEdge(canvas, projectedVertices[3], projectedVertices[7], linePaint)
+  
+-         // Draw angle values
++         // Draw angle values with larger text
+          val textPaint = Paint().apply {
+-             textSize = 15f * scaleFactor  // Increased from 12f to 15f
++             textSize = 18f * scaleFactor  // Increased text size
+              isAntiAlias = true
+          }
+```
+
+```diff
+              "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+              centerX - boxSize,
+-             centerY - boxSize - 15f * scaleFactor,  // Adjusted spacing
++             centerY - boxSize * 1.5f,  // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+              "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+              centerX - boxSize,
+-             centerY - boxSize - 35f * scaleFactor,  // Adjusted spacing
++             centerY - boxSize * 1.8f,  // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+              "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+              centerX - boxSize,
+-             centerY - boxSize - 55f * scaleFactor,  // Adjusted spacing
++             centerY - boxSize * 2.1f,  // Adjusted position
+              textPaint
+          )
+```
+
+---
+
+I've made several changes to make the 3D box visualization match the face mesh size and position:
+
+1. Position:
+   - Removed the vertical offset and now drawing the box at the same position as the face mesh
+   - The box is now centered on the same point as the face mesh
+
+2. Size and Proportions:
+   - Increased the base box size to 100f units (scaled by scaleFactor)
+   - Adjusted the box proportions to better match a face shape by making it 20% taller (1.2f multiplier for y-coordinates)
+   - This makes the box more representative of a face's proportions
+
+3. Visual Improvements:
+   - Increased line thickness to 4f units for better visibility
+   - Increased text size to 18f units for better readability
+   - Adjusted the perspective by increasing the z-offset from 3f to 4f for a better 3D effect
+
+4. Text Positioning:
+   - Repositioned the angle value texts relative to the box size:
+     - Yaw: 1.5x box size above
+     - Pitch: 1.8x box size above
+     - Roll: 2.1x box size above
+   - This ensures the text is always properly spaced regardless of the box size
+
+The box now better represents the face's orientation in 3D space and is properly sized and positioned relative to the face mesh.
+
+---
+
+_**User**_
+
+check the 3D box does not display 
+
+---
+
+_**Assistant**_
+
+Let me check why the 3D box is not displaying. I'll verify the drawing code and make sure it's being called correctly.
+
+
+---
+
+```diff
+                  val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
+                  drawSimpleHeadPoseAxes(canvas, facePose, noseX, noseY)
+-                 // Draw improved head pose axes slightly offset
++                 // Draw improved head pose axes and 3D box
+                  drawImprovedHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
+              }
+```
+
+```diff
+                  drawSimpleFaceInfo(canvas, noseX, noseY, faceIndex, facePose)
+              }
++         } else {
++             // In non-simple mode, also draw the 3D box visualization
++             if (showHeadPoseAxes) {
++                 val noseTip = faceLandmarks[1]  // Nose tip landmark
++                 val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
++                 val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
++                 val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
++                 draw3DBoxVisualization(canvas, facePose, noseX, noseY)
++             }
+          }
+      }
+```
+
+---
+
+I found the issue. The 3D box visualization was only being called from within `drawImprovedHeadPoseAxes`, but we need to make sure it's called in both simple and non-simple modes. I've made the following changes:
+
+1. Added a new section in the `else` block (non-simple mode) to draw the 3D box visualization
+2. Made sure the 3D box is drawn at the nose tip position in both modes
+3. Added proper checks for `showHeadPoseAxes` flag
+
+Now the 3D box should be visible in both simple and non-simple modes, positioned at the nose tip of the face. The box will be drawn whenever `showHeadPoseAxes` is true.
+
+Let me know if you still don't see the 3D box, and I can help investigate further.
+
+---
+
+_**User**_
+
+adjust the 3d box small
+
+---
+
+_**Assistant**_
+
+I'll adjust the 3D box size to make it smaller.
+
+
+---
+
+```diff
+      ) {
+          // Calculate box size based on face mesh size (approximately 1/3 of face width)
+-         val boxSize = 100f * scaleFactor  // Adjusted to match face mesh size
++         val boxSize = 40f * scaleFactor  // Reduced from 100f to 40f
+          val yawColor = Color.rgb(61, 1, 1)    // Dark red for yaw
+          val pitchColor = Color.rgb(1, 64, 1)  // Dark green for pitch
+```
+
+```diff
+          // Draw box edges with increased thickness
+          val linePaint = Paint().apply {
+-             strokeWidth = 4f * scaleFactor  // Increased thickness
++             strokeWidth = 2f * scaleFactor  // Reduced from 4f to 2f
+              isAntiAlias = true
+          }
+```
+
+```diff
+          // Draw angle values with larger text
+          val textPaint = Paint().apply {
+-             textSize = 18f * scaleFactor  // Increased text size
++             textSize = 12f * scaleFactor  // Reduced from 18f to 12f
+              isAntiAlias = true
+          }
+```
+
+```diff
+              "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+              centerX - boxSize,
+-             centerY - boxSize * 1.5f,  // Adjusted position
++             centerY - boxSize * 1.2f,  // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+              "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+              centerX - boxSize,
+-             centerY - boxSize * 1.8f,  // Adjusted position
++             centerY - boxSize * 1.4f,  // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+              "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+              centerX - boxSize,
+-             centerY - boxSize * 2.1f,  // Adjusted position
++             centerY - boxSize * 1.6f,  // Adjusted position
+              textPaint
+          )
+```
+
+---
+
+I've made the following adjustments to make the 3D box smaller and more proportional:
+
+1. Reduced the box size from 100f to 40f units (scaled by scaleFactor)
+2. Reduced the line thickness from 4f to 2f units for thinner edges
+3. Reduced the text size from 18f to 12f units to match the smaller box
+4. Adjusted the text positions to be closer to the box:
+   - Yaw: 1.2x box size above (was 1.5x)
+   - Pitch: 1.4x box size above (was 1.8x)
+   - Roll: 1.6x box size above (was 2.1x)
+
+The box should now be more compact while still maintaining its proportions and readability. The text is also positioned closer to the box to maintain a cohesive look.
+
+---
+
+_**User**_
+
+adjust the 3D box size like attached
+
+---
+
+_**Assistant**_
+
+I'll adjust the 3D box size and properties to match the image you shared, where the box appears larger and more prominent.
+
+
+---
+
+```diff
+          centerY: Float
+      ) {
+-         // Calculate box size based on face mesh size (approximately 1/3 of face width)
+-         val boxSize = 90f * scaleFactor  // Reduced from 100f to 60f
++         // Calculate box size based on face mesh size
++         val boxSize = 120f * scaleFactor  // Increased size to match image
+          val yawColor = Color.rgb(61, 1, 1)    // Dark red for yaw
+          val pitchColor = Color.rgb(1, 64, 1)  // Dark green for pitch
+          val rollColor = Color.rgb(2, 2, 53)   // Dark blue for roll
+- 
+  
+          // Convert angles to radians
+```
+
+```diff
+          // Project vertices to 2D with adjusted perspective
+          val projectedVertices = rotatedVertices.map { vertex ->
+-             val scale = 10f / (vertex[2] + 4f)  // Increased offset for better perspective
++             val scale = 15f / (vertex[2] + 4f)  // Increased scale for better perspective
+              floatArrayOf(
+                  vertex[0] * scale + centerX,
+```
+
+```diff
+          // Draw box edges with increased thickness
+          val linePaint = Paint().apply {
+-             strokeWidth = 3f * scaleFactor  // Reduced from 4f to 2f
+-             isAntiAlias = false
++             strokeWidth = 4f * scaleFactor  // Increased thickness
++             isAntiAlias = true
+          }
+  
+```
+
+```diff
+          // Draw angle values with larger text
+          val textPaint = Paint().apply {
+-             textSize = 12f * scaleFactor  // Reduced from 18f to 12f
++             textSize = 20f * scaleFactor  // Increased text size
+              isAntiAlias = true
+          }
+```
+
+```diff
+              "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+              centerX - boxSize,
+-             centerY - boxSize * 1.2f,  // Adjusted position
++             centerY - boxSize * 1.2f,
+              textPaint
+          )
+```
+
+```diff
+              "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+              centerX - boxSize,
+-             centerY - boxSize * 1.4f,  // Adjusted position
++             centerY - boxSize * 1.4f,
+              textPaint
+          )
+```
+
+```diff
+              "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+              centerX - boxSize,
+-             centerY - boxSize * 1.6f,  // Adjusted position
++             centerY - boxSize * 1.6f,
+              textPaint
+          )
+```
+
+---
+
+I've made several adjustments to match the size and appearance shown in the image:
+
+1. Increased the box size from 90f to 120f units to make it larger and more prominent
+2. Increased the perspective scale from 10f to 15f to make the 3D effect more pronounced
+3. Increased the line thickness to 4f units and enabled anti-aliasing for smoother lines
+4. Increased the text size to 20f units to make it more readable
+5. Kept the same color scheme but with thicker lines for better visibility
+
+The box should now appear larger and more prominent, similar to what's shown in the image. The text is also larger and more readable, and the 3D effect should be more pronounced due to the increased perspective scale.
+
+---
+
+_**User**_
+
+adjust the landmark have xyz background
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+```diff
+          faceIndex: Int
+      ) {
++ 
++         // Draw XYZ grid background
++         drawXYZGrid(canvas, faceLandmarks, offsetX, offsetY)
+  
+          if (showFaceLandmarks) {
+```
+
+```diff
+          }
+      }
++ 
++     private fun drawXYZGrid(
++         canvas: Canvas,
++         faceLandmarks: List<NormalizedLandmark>,
++         offsetX: Float,
++         offsetY: Float
++     ) {
++         // Find the approximate center of the face mesh for grid placement
++         val centerX = faceLandmarks.map { it.x() }.average() * imageWidth * scaleFactor + offsetX
++         val centerY = faceLandmarks.map { it.y() }.average() * imageHeight * scaleFactor + offsetY
++ 
++         val gridColor = Color.GRAY
++         val axisColor = Color.BLACK
++         val gridLinePaint = Paint().apply {
++             color = gridColor
++             strokeWidth = 1f * scaleFactor
++             style = Paint.Style.STROKE
++             isAntiAlias = true
++         }
++         val axisPaint = Paint().apply {
++             color = axisColor
++             strokeWidth = 2f * scaleFactor
++             isAntiAlias = true
++         }
++         val textPaint = Paint().apply {
++             color = axisColor
++             textSize = 15f * scaleFactor
++             isAntiAlias = true
++         }
++ 
++         val gridSize = 50f * scaleFactor // Size of each grid cell
++         val gridExtent = 3 // Number of grid cells in each direction from the center
++ 
++         // Draw grid lines parallel to XZ plane (horizontal in 2D projection)
++         for (i in -gridExtent..gridExtent) {
++             val z = i * gridSize
++             // Project points for this Z plane
++             val p1 = projectPoint(floatArrayOf(-gridExtent * gridSize, 0f, z), centerX, centerY, scaleFactor)
++             val p2 = projectPoint(floatArrayOf(gridExtent * gridSize, 0f, z), centerX, centerY, scaleFactor)
++             canvas.drawLine(p1[0], p1[1], p2[0], p2[1], gridLinePaint)
++ 
++             val p3 = projectPoint(floatArrayOf(i * gridSize, 0f, -gridExtent * gridSize), centerX, centerY, scaleFactor)
++             val p4 = projectPoint(floatArrayOf(i * gridSize, 0f, gridExtent * gridSize), centerX, centerY, scaleFactor)
++             canvas.drawLine(p3[0], p3[1], p4[0], p4[1], gridLinePaint)
++         }
++ 
++         // Draw grid lines parallel to YZ plane (vertical in 2D projection)
++          for (i in -gridExtent..gridExtent) {
++              val y = i * gridSize
++              // Project points for this Y plane
++              val p1 = projectPoint(floatArrayOf(0f, y, -gridExtent * gridSize), centerX, centerY, scaleFactor)
++              val p2 = projectPoint(floatArrayOf(0f, y, gridExtent * gridSize), centerX, centerY, scaleFactor)
++              canvas.drawLine(p1[0], p1[1], p2[0], p2[1], gridLinePaint)
++ 
++              val p3 = projectPoint(floatArrayOf(0f, -gridExtent * gridSize, i * gridSize), centerX, centerY, scaleFactor)
++              val p4 = projectPoint(floatArrayOf(0f, gridExtent * gridSize, i * gridSize), centerX, centerY, scaleFactor)
++              // Need to adjust for depth sorting or draw order for vertical lines
++              // For simplicity, drawing all lines for now
++              canvas.drawLine(p3[0], p3[1], p4[0], p4[1], gridLinePaint)
++          }
++ 
++          // Draw axes
++          val axisLength = (gridExtent + 1) * gridSize
++          val origin = projectPoint(floatArrayOf(0f, 0f, 0f), centerX, centerY, scaleFactor)
++          val xAxisEnd = projectPoint(floatArrayOf(axisLength, 0f, 0f), centerX, centerY, scaleFactor)
++          val yAxisEnd = projectPoint(floatArrayOf(0f, -axisLength, 0f), centerX, centerY, scaleFactor) // Y is typically down in 2D graphics
++          val zAxisEnd = projectPoint(floatArrayOf(0f, 0f, axisLength), centerX, centerY, scaleFactor)
++ 
++          axisPaint.color = Color.RED // X-axis
++          canvas.drawLine(origin[0], origin[1], xAxisEnd[0], xAxisEnd[1], axisPaint)
++          axisPaint.color = Color.GREEN // Y-axis
++          canvas.drawLine(origin[0], origin[1], yAxisEnd[0], yAxisEnd[1], axisPaint)
++          axisPaint.color = Color.BLUE // Z-axis
++          canvas.drawLine(origin[0], origin[1], zAxisEnd[0], zAxisEnd[1], axisPaint)
++ 
++          // Draw axis labels
++          canvas.drawText("X", xAxisEnd[0], xAxisEnd[1], textPaint)
++          canvas.drawText("Y", yAxisEnd[0], yAxisEnd[1], textPaint)
++          canvas.drawText("Z", zAxisEnd[0], zAxisEnd[1], textPaint)
++ 
++          // Draw origin circle
++          canvas.drawCircle(origin[0], origin[1], 3f * scaleFactor, axisPaint)
++     }
++ 
++     private fun projectPoint(
++         point: FloatArray,
++         centerX: Float,
++         centerY: Float,
++         scaleFactor: Float
++     ): FloatArray {
++         // Simple perspective projection helper
++         // This is a simplified projection and may not perfectly match the example
++         val scale = 1f / (point[2] / (1000f * scaleFactor) + 1f) // Adjust 1000f for perspective strength
++         val projectedX = point[0] * scale + centerX
++         val projectedY = point[1] * scale + centerY
++         return floatArrayOf(projectedX, projectedY)
++     }
+  
+      private fun drawHeadPoseOnFace(
+```
+
+---
+
+
+
+---
+
+OK, I'll add a 3D XYZ grid background to the face landmarks visualization, similar to the image you provided. This will involve adding a new drawing function and a helper for 3D point projection.
+
+---
+
 
 
 ---
 
 
+
+---
+
+It seems the previous attempt to add the XYZ grid didn't result in any changes. I'll try reapplying the edit to include the `drawXYZGrid` function and the necessary calls to display the grid behind the face landmarks.
+
+---
+
+
+
+---
+
+
+
+---
+
+I see that the previous attempts to add the XYZ grid didn't work. I'll try adding the code for the grid and projection functions again, ensuring they are correctly placed in the file.
+
+
+---
+
+
+
+---
+
+
+
+---
+
+I apologize that the previous attempts to add the XYZ grid were unsuccessful. I will try again to add the necessary code for the grid background visualization.
+
+---
+
+
+
+---
+
+
+
+---
+
+I apologize, but I am having trouble applying the code changes to add the XYZ grid background visualization to `OverlayView.kt`. I've attempted to add the necessary functions and calls multiple times using my tools, but the changes are not being reflected in the file.
+
+It seems there might be an issue with my ability to modify this specific file or apply this type of change using the available tools at this moment.
+
+You may need to manually add the `drawXYZGrid` and `projectPoint` functions and call `drawXYZGrid` from within the `drawFaceLandmarks` function yourself.
+
+I am sorry for this inconvenience.
+
+---
+
+_**User**_
+
+Type mismatch: inferred type is Double but Float was expected
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+It looks like the error is happening because the calculation for `centerX` and `centerY` in the `drawXYZGrid` function is resulting in `Double` values, but they are being used where `Float` values are expected. I need to explicitly convert these `Double` values to `Float`.
+
+I will make the necessary changes in the `drawXYZGrid` function.
+
+
+---
+
+
+
+---
+
+It seems like the change was not applied. I will try again to convert the `centerX` and `centerY` to `Float` in the `drawXYZGrid` function.
+
+---
+
+```diff
+      ) {
+          // Find the approximate center of the face mesh for grid placement
+-         val centerX = faceLandmarks.map { it.x() }.average() * imageWidth * scaleFactor + offsetX
+-         val centerY = faceLandmarks.map { it.y() }.average() * imageHeight * scaleFactor + offsetY
++         val centerX = faceLandmarks.map { it.x() }.average().toFloat() * imageWidth * scaleFactor + offsetX
++         val centerY = faceLandmarks.map { it.y() }.average().toFloat() * imageHeight * scaleFactor + offsetY
+  
+          val gridColor = Color.GRAY
+```
+
+---
+
+I've converted the `centerX` and `centerY` calculations in the `drawXYZGrid` function to explicitly return `Float` values by adding `.toFloat()`. This should resolve the "Type mismatch: inferred type is Double but Float was expected" error.
+
+---
+
+_**User**_
+
+adjust the draw3DBoxVisualization as 長方形
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I understand you want to change the 3D box visualization to be a rectangle (長方形). I will modify the `draw3DBoxVisualization` function to use different dimensions for width, height, and depth to create a rectangular prism shape instead of a cube.
+
+I will introduce `boxWidth`, `boxHeight`, and `boxDepth` and update the vertex calculations accordingly.
+
+
+---
+
+```diff
+      ) {
+          // Calculate box size based on face mesh size
+-         val boxSize = 120f * scaleFactor  // Increased size to match image
++         val boxWidth = 100f * scaleFactor  // Width (X-dimension)
++         val boxHeight = 140f * scaleFactor // Height (Y-dimension), slightly taller for face shape
++         val boxDepth = 80f * scaleFactor   // Depth (Z-dimension)
++ 
+          val yawColor = Color.rgb(61, 1, 1)    // Dark red for yaw
+          val pitchColor = Color.rgb(1, 64, 1)  // Dark green for pitch
+```
+
+```diff
+          val rollRad = Math.toRadians(facePose.improvedRoll.toDouble())
+  
+-         // Define box vertices with adjusted proportions to match face shape
++         // Define box vertices with adjusted dimensions
+          val vertices = arrayOf(
+-             floatArrayOf(-boxSize, -boxSize * 1.2f, -boxSize),  // 0: left-bottom-back
+-             floatArrayOf(boxSize, -boxSize * 1.2f, -boxSize),   // 1: right-bottom-back
+-             floatArrayOf(boxSize, boxSize * 1.2f, -boxSize),    // 2: right-top-back
+-             floatArrayOf(-boxSize, boxSize * 1.2f, -boxSize),   // 3: left-top-back
+-             floatArrayOf(-boxSize, -boxSize * 1.2f, boxSize),   // 4: left-bottom-front
+-             floatArrayOf(boxSize, -boxSize * 1.2f, boxSize),    // 5: right-bottom-front
+-             floatArrayOf(boxSize, boxSize * 1.2f, boxSize),     // 6: right-top-front
+-             floatArrayOf(-boxSize, boxSize * 1.2f, boxSize)     // 7: left-top-front
++             floatArrayOf(-boxWidth / 2, -boxHeight / 2, -boxDepth / 2),  // 0: left-bottom-back
++             floatArrayOf(boxWidth / 2, -boxHeight / 2, -boxDepth / 2),   // 1: right-bottom-back
++             floatArrayOf(boxWidth / 2, boxHeight / 2, -boxDepth / 2),    // 2: right-top-back
++             floatArrayOf(-boxWidth / 2, boxHeight / 2, -boxDepth / 2),   // 3: left-top-back
++             floatArrayOf(-boxWidth / 2, -boxHeight / 2, boxDepth / 2),   // 4: left-bottom-front
++             floatArrayOf(boxWidth / 2, -boxHeight / 2, boxDepth / 2),    // 5: right-bottom-front
++             floatArrayOf(boxWidth / 2, boxHeight / 2, boxDepth / 2),     // 6: right-top-front
++             floatArrayOf(-boxWidth / 2, boxHeight / 2, boxDepth / 2)     // 7: left-top-front
+          )
+  
+```
+
+```diff
+          // Project vertices to 2D with adjusted perspective
+          val projectedVertices = rotatedVertices.map { vertex ->
+-             val scale = 15f / (vertex[2] + 4f)  // Increased scale for better perspective
++             val scale = 15f / (vertex[2] + 150f * scaleFactor)  // Adjusted scale and offset for perspective
+              floatArrayOf(
+                  vertex[0] * scale + centerX,
+```
+
+```diff
+          }
+  
+-         // Back face
++         // Draw edges - need to handle visibility based on depth (simple approach)
++         // Drawing all edges for now, a proper 3D rendering would require depth sorting
++ 
++         // Back face (more likely to be occluded, draw first)
+          linePaint.color = yawColor
+          drawBoxEdge(canvas, projectedVertices[0], projectedVertices[1], linePaint)
+```
+
+```diff
+          drawBoxEdge(canvas, projectedVertices[3], projectedVertices[0], linePaint)
+  
+-         // Front face
+-         linePaint.color = pitchColor
+-         drawBoxEdge(canvas, projectedVertices[4], projectedVertices[5], linePaint)
+-         drawBoxEdge(canvas, projectedVertices[5], projectedVertices[6], linePaint)
+-         drawBoxEdge(canvas, projectedVertices[6], projectedVertices[7], linePaint)
+-         drawBoxEdge(canvas, projectedVertices[7], projectedVertices[4], linePaint)
+- 
+-         // Connecting edges
++         // Connecting edges (draw next)
+          linePaint.color = rollColor
+          drawBoxEdge(canvas, projectedVertices[0], projectedVertices[4], linePaint)
+          drawBoxEdge(canvas, projectedVertices[1], projectedVertices[5], linePaint)
+          drawBoxEdge(canvas, projectedVertices[2], projectedVertices[6], linePaint)
+          drawBoxEdge(canvas, projectedVertices[3], projectedVertices[7], linePaint)
++ 
++         // Front face (less likely to be occluded, draw last)
++         linePaint.color = pitchColor
++         drawBoxEdge(canvas, projectedVertices[4], projectedVertices[5], linePaint)
++         drawBoxEdge(canvas, projectedVertices[5], projectedVertices[6], linePaint)
++         drawBoxEdge(canvas, projectedVertices[6], projectedVertices[7], linePaint)
++         drawBoxEdge(canvas, projectedVertices[7], projectedVertices[4], linePaint)
+  
+          // Draw angle values with larger text
+```
+
+```diff
+          canvas.drawText(
+              "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+-             centerX - boxSize,
+-             centerY - boxSize * 1.2f,
++             centerX - boxWidth / 2,
++             centerY - boxHeight / 2 - 20f * scaleFactor, // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+          canvas.drawText(
+              "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+-             centerX - boxSize,
+-             centerY - boxSize * 1.4f,
++             centerX - boxWidth / 2,
++             centerY - boxHeight / 2 - 40f * scaleFactor, // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+          canvas.drawText(
+              "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+-             centerX - boxSize,
+-             centerY - boxSize * 1.6f,
++             centerX - boxWidth / 2,
++             centerY - boxHeight / 2 - 60f * scaleFactor, // Adjusted position
+              textPaint
+          )
+```
+
+---
+
+
+
+---
+
+I've modified the `draw3DBoxVisualization` function to represent a rectangular prism ("長方形" in Japanese) instead of a cube. Here's how I adjusted it:
+
+1.  **Introduced Separate Dimensions:** Instead of a single `boxSize`, I've added `boxWidth`, `boxHeight`, and `boxDepth` to control the dimensions along the X, Y, and Z axes respectively.
+    *   `boxWidth` is set to `100f * scaleFactor`.
+    *   `boxHeight` is set to `140f * scaleFactor` (slightly taller to resemble a face shape).
+    *   `boxDepth` is set to `80f * scaleFactor`.
+2.  **Updated Vertices:** The coordinates for the 8 vertices of the box are now calculated using these distinct `boxWidth`, `boxHeight`, and `boxDepth` values, centered around the origin.
+3.  **Adjusted Perspective:** The perspective scale calculation was slightly adjusted (`15f / (vertex[2] + 150f * scaleFactor)`) to potentially provide a better visual representation of the rectangular shape.
+4.  **Adjusted Text Positioning:** The positions for drawing the yaw, pitch, and roll text values are now based on `centerX`, `centerY`, `boxWidth`, and `boxHeight` to ensure they are correctly positioned relative to the new rectangular box shape.
+
+The 3D visualization should now appear as a rectangular box, with different lengths for each side, reflecting the adjustments I've made to the dimensions.
+
+---
+
+_**User**_
+
+the cube size should similiar as the connector as possible
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I will adjust the dimensions of the 3D box visualization to make its size visually similar to the size of the face mesh and its connectors. This involves changing the `boxWidth`, `boxHeight`, and `boxDepth` values in the `draw3DBoxVisualization` function.
+
+I will reduce the current dimensions slightly to make the box appear more in line with the size of the face mesh components on the screen. I'll also adjust the perspective scale slightly if needed to maintain a good visual representation.
+
+
+---
+
+```diff
+      ) {
+          // Calculate box size based on face mesh size
+-         val boxWidth = 100f * scaleFactor  // Width (X-dimension)
+-         val boxHeight = 140f * scaleFactor // Height (Y-dimension), slightly taller for face shape
+-         val boxDepth = 80f * scaleFactor   // Depth (Z-dimension)
++         val boxWidth = 80f * scaleFactor  // Reduced width
++         val boxHeight = 110f * scaleFactor // Reduced height
++         val boxDepth = 60f * scaleFactor   // Reduced depth
+  
+          val yawColor = Color.rgb(61, 1, 1)    // Dark red for yaw
+```
+
+```diff
+          // Project vertices to 2D with adjusted perspective
+          val projectedVertices = rotatedVertices.map { vertex ->
+-             val scale = 15f / (vertex[2] + 150f * scaleFactor)  // Adjusted scale and offset for perspective
++             val scale = 12f / (vertex[2] + 100f * scaleFactor)  // Adjusted scale and offset
+              floatArrayOf(
+                  vertex[0] * scale + centerX,
+```
+
+```diff
+          // Draw box edges with increased thickness
+          val linePaint = Paint().apply {
+-             strokeWidth = 4f * scaleFactor  // Increased thickness
++             strokeWidth = 3f * scaleFactor  // Slightly reduced thickness
+              isAntiAlias = true
+          }
+```
+
+```diff
+          // Draw angle values with larger text
+          val textPaint = Paint().apply {
+-             textSize = 20f * scaleFactor  // Increased text size
++             textSize = 15f * scaleFactor  // Slightly reduced text size
+              isAntiAlias = true
+          }
+```
+
+```diff
+              "Yaw: ${String.format("%.1f", facePose.improvedYaw)}°",
+              centerX - boxWidth / 2,
+-             centerY - boxHeight / 2 - 20f * scaleFactor, // Adjusted position
++             centerY - boxHeight / 2 - 15f * scaleFactor, // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+              "Pitch: ${String.format("%.1f", facePose.improvedPitch)}°",
+              centerX - boxWidth / 2,
+-             centerY - boxHeight / 2 - 40f * scaleFactor, // Adjusted position
++             centerY - boxHeight / 2 - 30f * scaleFactor, // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+              "Roll: ${String.format("%.1f", facePose.improvedRoll)}°",
+              centerX - boxWidth / 2,
+-             centerY - boxHeight / 2 - 60f * scaleFactor, // Adjusted position
++             centerY - boxHeight / 2 - 45f * scaleFactor, // Adjusted position
+              textPaint
+          )
+```
+
+---
+
+
+
+---
+
+I've adjusted the dimensions of the 3D box visualization in the `draw3DBoxVisualization` function to be more in line with the size of the face mesh and its connectors.
+
+Specifically, I have:
+- Reduced the `boxWidth`, `boxHeight`, and `boxDepth`.
+- Slightly reduced the line thickness for the box edges.
+- Adjusted the perspective scaling.
+- Reduced the text size for the angle values and repositioned them closer to the smaller box.
+
+These changes should make the 3D box appear smaller and more integrated with the rest of the face landmark visualization.
+
+---
+
+_**User**_
+
+draw a cube to present the head pos in outside of the facelandmark
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+Okay, I can add a cube visualization to represent the head pose outside of the face landmarks, similar to the existing head pose visualization in the info box.
+
+I will create a new function `drawHeadPoseCube` to draw a cube based on the head pose angles and call it from `drawFacePoseInfo`.
+
+
+---
+
+```diff
+          val gazeY = baseTextY + lineHeight * 9
+          drawGazeVisualization(canvas, facePose, gazeX, gazeY)
++ 
++         // Draw head pose cube visualization
++         val cubeX = baseTextX + 150f // Position the cube to the right of other info
++         val cubeY = baseTextY + lineHeight * 5 // Position it around the head pose angles
++         drawHeadPoseCube(canvas, facePose, cubeX, cubeY)
+  
+          // Draw head pose angles
+```
+
+---
+
+
+
+---
+
+```diff
+          canvas.restore()
+      }
++ 
++     private fun drawHeadPoseCube(
++         canvas: Canvas,
++         facePose: FacePoseAnalyzer.FacePose,
++         centerX: Float,
++         centerY: Float
++     ) {
++         val cubeSize = 50f // Base size of the cube
++         val yawColor = Color.RED    // Red for yaw (X-axis)
++         val pitchColor = Color.GREEN  // Green for pitch (Y-axis)
++         val rollColor = Color.BLUE       // Blue for roll (Z-axis)
++ 
++         // Convert angles to radians (using original pose for this visualization)
++         val yawRad = Math.toRadians(facePose.yaw.toDouble())
++         val pitchRad = Math.toRadians(facePose.pitch.toDouble())
++         val rollRad = Math.toRadians(facePose.roll.toDouble())
++ 
++         // Define cube vertices
++         val vertices = arrayOf(
++             floatArrayOf(-cubeSize, -cubeSize, -cubeSize),  // 0: left-bottom-back
++             floatArrayOf(cubeSize, -cubeSize, -cubeSize),   // 1: right-bottom-back
++             floatArrayOf(cubeSize, cubeSize, -cubeSize),    // 2: right-top-back
++             floatArrayOf(-cubeSize, cubeSize, -cubeSize),   // 3: left-top-back
++             floatArrayOf(-cubeSize, -cubeSize, cubeSize),   // 4: left-bottom-front
++             floatArrayOf(cubeSize, -cubeSize, cubeSize),    // 5: right-bottom-front
++             floatArrayOf(cubeSize, cubeSize, cubeSize),     // 6: right-top-front
++             floatArrayOf(-cubeSize, cubeSize, cubeSize)     // 7: left-top-front
++         )
++ 
++         // Apply rotations
++         val rotatedVertices = vertices.map { vertex ->
++             var x = vertex[0]
++             var y = vertex[1]
++             var z = vertex[2]
++ 
++             // Roll rotation around Z
++             val rollX = x * Math.cos(rollRad) - y * Math.sin(rollRad)
++             val rollY = x * Math.sin(rollRad) + y * Math.cos(rollRad)
++             x = rollX.toFloat()
++             y = rollY.toFloat()
++ 
++             // Pitch rotation around X
++             val pitchY = y * Math.cos(pitchRad) - z * Math.sin(pitchRad)
++             val pitchZ = y * Math.sin(pitchRad) + z * Math.cos(pitchRad)
++             y = pitchY.toFloat()
++             z = pitchZ.toFloat()
++ 
++             // Yaw rotation around Y
++             val yawX = x * Math.cos(yawRad) + z * Math.sin(yawRad)
++             val yawZ = -x * Math.sin(yawRad) + z * Math.cos(yawRad)
++             x = yawX.toFloat()
++             z = yawZ.toFloat()
++ 
++             floatArrayOf(x, y, z)
++         }
++ 
++         // Project vertices to 2D
++         val projectedVertices = rotatedVertices.map { vertex ->
++             val scale = 1f / (vertex[2] / 500f + 1f)  // Simple perspective
++             floatArrayOf(
++                 vertex[0] * scale + centerX,
++                 vertex[1] * scale + centerY
++             )
++         }
++ 
++         // Draw box edges
++         val linePaint = Paint().apply {
++             strokeWidth = 2f
++             isAntiAlias = true
++         }
++ 
++         // Define edges for drawing
++         val edges = arrayOf(
++             0 to 1, 1 to 2, 2 to 3, 3 to 0, // Back face
++             4 to 5, 5 to 6, 6 to 7, 7 to 4, // Front face
++             0 to 4, 1 to 5, 2 to 6, 3 to 7  // Connecting edges
++         )
++ 
++         // Draw edges with colors representing axes orientation
++         edges.forEach { (startIdx, endIdx) ->
++             val p1 = projectedVertices[startIdx]
++             val p2 = projectedVertices[endIdx]
++ 
++             // Simple coloring based on edge direction (primarily for visual aid)
++             linePaint.color = when {
++                 // Edges roughly aligned with X (connecting left and right vertices on the back/front faces)
++                 (startIdx == 0 && endIdx == 1) || (startIdx == 3 && endIdx == 2) ||
++                 (startIdx == 4 && endIdx == 5) || (startIdx == 7 && endIdx == 6) -> yawColor
++                 // Edges roughly aligned with Y (connecting top and bottom vertices on the back/front faces)
++                 (startIdx == 0 && endIdx == 3) || (startIdx == 1 && endIdx == 2) ||
++                 (startIdx == 4 && endIdx == 7) || (startIdx == 5 && endIdx == 6) -> pitchColor
++                 // Edges roughly aligned with Z (connecting back and front faces)
++                 (startIdx == 0 && endIdx == 4) || (startIdx == 1 && endIdx == 5) ||
++                 (startIdx == 2 && endIdx == 6) || (startIdx == 3 && endIdx == 7) -> rollColor
++                 else -> Color.BLACK // Default color
++             }
++ 
++             canvas.drawLine(p1[0], p1[1], p2[0], p2[1], linePaint)
++         }
++     }
+  
+      private fun drawGazeVisualization(
+```
+
+---
+
+
+
+---
+
+I've added a new function `drawHeadPoseCube` and integrated it into the `drawFacePoseInfo` function.
+
+This new cube visualization appears in the information box for each detected face, positioned to the right of the other head pose and gaze details.
+
+Here's what the `drawHeadPoseCube` function does:
+- It draws a simple 3D cube.
+- It uses the **original** head pose angles (yaw, pitch, roll) to rotate the cube, visually representing the face's orientation.
+- The edges of the cube are colored (Red for edges roughly aligned with the X/Yaw axis, Green for Y/Pitch, and Blue for Z/Roll) to help understand the orientation.
+
+This provides a clear, separate visualization of the head pose in the info panel, distinct from the landmark-based visualizations on the face itself.
+
+---
+
+_**User**_
+
+the drawHeadPoseCube center in the nose and larger
 
 ---
 
