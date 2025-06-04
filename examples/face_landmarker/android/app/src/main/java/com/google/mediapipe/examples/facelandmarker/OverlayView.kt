@@ -20,6 +20,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.graphics.PointF
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
@@ -29,6 +30,9 @@ import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.PI
 
 class OverlayView(context: Context?, attrs: AttributeSet?) :
     View(context, attrs) {
@@ -165,13 +169,13 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 drawFaceConnectors(canvas, faceLandmarks, offsetX, offsetY, index)
                 drawFaceLandmarks(canvas, faceLandmarks, offsetX, offsetY, index)
 
-                // Draw head pose cube on the face (centered at nose)
-                // val noseTip = faceLandmarks[1] // Nose tip landmark
-                // val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
-                // val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
-                // if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
-                //     drawHeadPoseCube(canvas, faceLandmarks, facePose, noseX, noseY)
-                // }
+                //Draw head pose cube on the face (centered at nose)
+                val noseTip = faceLandmarks[1] // Nose tip landmark
+                val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+                val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+                if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
+                    drawHeadPoseCube(canvas, faceLandmarks, facePose, noseX, noseY)
+                }
 
                 // Draw face number near the face with matching color
                 // val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
@@ -202,6 +206,80 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 // Analyze and draw face pose information
                 //val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks)
                 //drawFacePoseInfo(canvas, facePose, offsetX, offsetY, index)
+
+                // Draw head pose and gaze visualizations at the bottom of the face mesh (landmark 152)
+                if (faceLandmarks.size > 152) {
+                    val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
+                    val chin = faceLandmarks[152]
+                    val chinX = chin.x() * imageWidth * scaleFactor + offsetX
+                    val chinY = chin.y() * imageHeight * scaleFactor + offsetY
+
+                    // Get nose tip and forehead points for reference
+                    val noseTip = faceLandmarks[1]  // Nose tip landmark
+                    val forehead = faceLandmarks[10]  // Forehead landmark
+
+                    val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+                    val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+                    
+                    // if (showHeadPoseAxes) {
+                    //     drawHeadPoseVisualization(canvas, facePose, chinX, chinY)
+                    // }
+                    if (showGaze) {
+                         //drawHeadPoseVisualization(canvas, facePose, noseX, noseY)
+                        drawSimpleHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
+                        drawGazeVisualization(canvas, facePose, chinX, chinY)
+                    }
+                }
+
+                // Draw head pose axes on the face
+                if (showHeadPoseAxes) {
+                    drawHeadPoseOnFace(canvas, faceLandmarks, offsetX, offsetY)
+                }
+
+                // Draw gaze direction on the face
+                if (showGaze) {
+                    drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY)
+                }
+
+                // Draw face pose info
+                if (showFacePoseInfo) {
+                    val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
+                    drawFacePoseInfo(canvas, faceLandmarks, facePose, offsetX, offsetY, index)
+                }
+
+                // Draw individual pose indicators near the ears
+                if (showHeadPoseAxes) {
+                    val leftEar = faceLandmarks.getOrNull(FacePoseAnalyzer.LEFT_EAR) // Landmark for left ear (index 234)
+                    val rightEar = faceLandmarks.getOrNull(FacePoseAnalyzer.RIGHT_EAR) // Landmark for right ear (index 454)
+
+                    // Offset the indicators slightly from the ear landmark position
+                    val indicatorHorizontalOffset = 30f * scaleFactor // Offset horizontally
+                    val indicatorVerticalOffset = 0f
+                    val indicatorSpacing = 50f * scaleFactor // Horizontal spacing between indicators
+
+                    if (leftEar != null) {
+                        val leftEarCoords = getLandmarkScreenCoords(leftEar, offsetX, offsetY)
+
+                        // Position indicators horizontally to the left of the left ear
+                        // Yaw indicator (leftmost position)
+                        drawYawIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing * 2, leftEarCoords.y + indicatorVerticalOffset, facePose.yaw, scaleFactor)
+                        // Pitch indicator (middle position)
+                        drawPitchIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing, leftEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
+                        // Roll indicator (rightmost position)
+                        drawRollIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset, leftEarCoords.y + indicatorVerticalOffset, facePose.v2Roll, scaleFactor)
+                    }
+
+                    if (rightEar != null) {
+                        val rightEarCoords = getLandmarkScreenCoords(rightEar, offsetX, offsetY)
+                        // Position indicators horizontally to the right of the right ear
+                        // Yaw indicator (leftmost position)
+                        drawYawIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset, rightEarCoords.y + indicatorVerticalOffset, facePose.yaw, scaleFactor)
+                        // Pitch indicator (middle position)
+                        drawPitchIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing, rightEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
+                        // Roll indicator (rightmost position)
+                        drawRollIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing * 2, rightEarCoords.y + indicatorVerticalOffset, facePose.v2Roll, scaleFactor)
+                    }
+                }
             }
         }
     }
@@ -1035,6 +1113,23 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         textPaint.textSize = 30f
         textPaint.color = Color.BLACK
 
+        // Draw v2 head pose angles
+        textPaint.textSize = 25f
+        textPaint.color = Color.RED
+        canvas.drawText(
+            "v2 Yaw: ${String.format("%.1f", facePose.yaw)}°",
+            baseTextX, baseTextY + lineHeight * 6.5f, textPaint)
+        textPaint.color = Color.GREEN
+        canvas.drawText(
+            "v2 Pitch: ${String.format("%.1f", facePose.pitch)}°",
+            baseTextX, baseTextY + lineHeight * 7.5f, textPaint)
+        textPaint.color = Color.BLUE
+        canvas.drawText(
+            "v2 Roll: ${String.format("%.1f", facePose.v2Roll)}°",
+            baseTextX, baseTextY + lineHeight * 8.5f, textPaint)
+        textPaint.textSize = 30f
+        textPaint.color = Color.BLACK
+
         // Draw eye positions
         val leftEye = facePose.eyePositions.leftEye
         val rightEye = facePose.eyePositions.rightEye
@@ -1312,27 +1407,27 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         canvas.drawCircle(centerX, centerY, sphereRadius, spherePaint)
 
         // Draw rotation indicators on sphere
-        val indicatorPaint = Paint().apply {
+        val sphereIndicatorPaint = Paint().apply {
             strokeWidth = 2f * scaleFactor
             style = Paint.Style.STROKE
             isAntiAlias = true
         }
 
         // Draw yaw indicator (horizontal circle)
-        indicatorPaint.color = yawColor
+        sphereIndicatorPaint.color = yawColor
         // Position indicator at the nose tip's 2D projection
-        canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, indicatorPaint)
+        canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, sphereIndicatorPaint)
 
         // Draw pitch indicator (vertical circle)
-        indicatorPaint.color = pitchColor
+        sphereIndicatorPaint.color = pitchColor
         canvas.save()
         // Rotate around the nose tip's 2D projection
         canvas.rotate(90f, centerX, centerY)
-        canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, indicatorPaint)
+        canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, sphereIndicatorPaint)
         canvas.restore()
 
         // Draw roll indicator (rotating line)
-        indicatorPaint.color = rollColor
+        sphereIndicatorPaint.color = rollColor
         canvas.save()
         // Rotate around the nose tip's 2D projection
         canvas.rotate(facePose.roll, centerX, centerY)
@@ -1341,7 +1436,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             centerY, // Start point Y (relative to nose tip center)
             centerX + sphereRadius, // End point X (relative to nose tip center)
             centerY, // End point Y (relative to nose tip center)
-            indicatorPaint
+            sphereIndicatorPaint
         )
         canvas.restore()
 
@@ -1368,20 +1463,51 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             "P:${String.format("%.0f", facePose.pitch)}°",
             // Position text relative to the nose tip's 2D projection
             centerX + sphereRadius * 0.7f, // Adjusted position
-            centerY - sphereRadius * 0.7f, // Adjusted position
+            centerY + sphereRadius * 0.7f, // Adjusted position
             textPaint
         )
 
         // Draw roll value
         textPaint.color = rollColor
-            canvas.drawText(
-            "R:${String.format("%.0f", facePose.roll)}°", // Keep original roll
+        canvas.drawText(
+            "R:${String.format("%.0f", facePose.v2Roll)}°", // Display v2 roll
             centerX,
             // Position text relative to the nose tip's 2D projection
             centerY + sphereRadius * 0.7f, // Adjusted position
-                textPaint
-            )
+            textPaint
+        )
+
+        // Draw individual rotation axes from the center sphere
+        val axisLength = sphereRadius * 1.5f // Length of individual axes
+        val axisPaint = Paint().apply {
+            strokeWidth = 3f * scaleFactor
+            isAntiAlias = true
         }
+
+        // Yaw axis (rotate around Y, draw X axis initially)
+        axisPaint.color = yawColor
+        canvas.save()
+        canvas.translate(centerX, centerY)
+        canvas.rotate(facePose.yaw, 0f, 0f) // Rotate around center
+        canvas.drawLine(0f, 0f, axisLength, 0f, axisPaint)
+        canvas.restore()
+
+        // Pitch axis (rotate around X, draw Y axis initially)
+        axisPaint.color = pitchColor
+        canvas.save()
+        canvas.translate(centerX, centerY)
+        canvas.rotate(facePose.pitch, 0f, 0f) // Rotate around center
+        canvas.drawLine(0f, 0f, 0f, -axisLength, axisPaint) // Y is down in 2D
+        canvas.restore()
+
+        // Roll axis (rotate around Z, draw line in XY plane initially)
+        axisPaint.color = rollColor
+        canvas.save()
+        canvas.translate(centerX, centerY)
+        canvas.rotate(facePose.v2Roll, 0f, 0f)
+        canvas.drawLine(-axisLength, 0f, axisLength, 0f, axisPaint) // Line in X direction
+        canvas.restore()
+    }
 
     private fun drawSimpleHeadPoseAxes(
         canvas: Canvas,
@@ -2208,5 +2334,182 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             rightEyeY + (rightIris.y - 0.5f) * gazeLength,
             gazePaint
         )
+    }
+
+    // Helper function to get landmark screen coordinates
+    private fun getLandmarkScreenCoords(landmark: NormalizedLandmark, offsetX: Float, offsetY: Float): PointF {
+        val x = landmark.x() * imageWidth * scaleFactor + offsetX
+        val y = landmark.y() * imageHeight * scaleFactor + offsetY
+        return PointF(x, y)
+    }
+
+    // Draws a horizontal line rotated by yawAngle near the specified coordinates
+    private fun drawYawIndicatorNearEar(
+        canvas: Canvas,
+        x: Float,
+        y: Float,
+        yawAngle: Float,
+        scaleFactor: Float
+    ) {
+        val indicatorLength = 50f * scaleFactor // Length of the indicator line
+        val yawColor = Color.rgb(255, 100, 100) // Red color
+
+        val paint = Paint().apply {
+            color = yawColor
+            strokeWidth = 3f * scaleFactor
+            isAntiAlias = true
+        }
+
+        canvas.save()
+        canvas.translate(x, y) // Move canvas origin to the ear position
+        //canvas.rotate(yawAngle) // Rotate based on yaw angle (This rotates the whole line, not just the dot)
+
+        // Draw the horizontal line
+        canvas.drawLine(-indicatorLength / 2f, 0f, indicatorLength / 2f, 0f, paint)
+
+        // Draw the moving dot
+        val dotPaint = Paint().apply {
+            color = Color.BLACK // Black dot
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        val dotRadius = 3f * scaleFactor
+
+        // Calculate dot position based on yaw angle
+        // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+        val maxIndicatorYaw = 60f // Assuming indicator covers -60 to +60 degrees of yaw (adjust for sensitivity)
+        val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+        // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+        // When yaw is -maxIndicatorYaw, dotX should be -indicatorLength/2f
+        // When yaw is 0, dotX should be 0
+        // When yaw is +maxIndicatorYaw, dotX should be +indicatorLength/2f
+        val dotX = (clampedYaw / maxIndicatorYaw) * (indicatorLength / 2f) // This formula seems correct for linear mapping
+        val dotY = 0f // The dot moves horizontally along the line
+
+        // Draw the dot at the calculated position in the non-rotated canvas
+        canvas.drawCircle(dotX, dotY, dotRadius, dotPaint)
+
+        canvas.restore()
+    }
+
+    // Draws a vertical line rotated by pitchAngle near the specified coordinates
+    private fun drawPitchIndicatorNearEar(
+        canvas: Canvas,
+        x: Float,
+        y: Float,
+        pitchAngle: Float,
+        scaleFactor: Float
+    ) {
+        val indicatorLength = 30f * scaleFactor // Length of the indicator line
+        val pitchColor = Color.rgb(100, 255, 100) // Green color
+
+        val paint = Paint().apply {
+            color = pitchColor
+            strokeWidth = 3f * scaleFactor
+            isAntiAlias = true
+        }
+
+        canvas.save()
+        canvas.translate(x, y) // Move canvas origin to the ear position
+
+        // Draw a vertical line centered at the origin (Y is down in 2D)
+        canvas.drawLine(0f, -indicatorLength / 2f, 0f, indicatorLength / 2f, paint)
+
+        // Draw the moving dot
+        val dotPaint = Paint().apply {
+            color = Color.BLACK // Black dot
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        val dotRadius = 3f * scaleFactor
+
+        // Calculate dot position based on pitch angle
+        // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+        val maxIndicatorPitch = 60f // Assuming indicator covers -60 to +60 degrees of pitch (adjust for sensitivity)
+        val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+        // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+        // Note: Positive pitch means looking down, which corresponds to a larger Y value on the screen (Y is down).
+        // So, a positive pitch angle should map to a positive Y position relative to the center (0,0).
+        val dotX = 0f
+        val dotY = (clampedPitch / maxIndicatorPitch) * (indicatorLength / 2f)
+
+        // Draw the dot at the calculated position relative to the fixed vertical line (origin is at x, y)
+        canvas.drawCircle(dotX, dotY, dotRadius, dotPaint)
+
+        canvas.restore()
+    }
+
+    // Draws a semicircle rotated by rollAngle near the specified coordinates
+    private fun drawRollIndicatorNearEar(
+        canvas: Canvas,
+        x: Float,
+        y: Float,
+        rollAngle: Float,
+        scaleFactor: Float
+    ) {
+        val indicatorRadius = 15f * scaleFactor // Radius of the semicircle
+        val rollColor = Color.rgb(100, 100, 255) // Blue color
+
+        val paint = Paint().apply {
+            color = rollColor
+            strokeWidth = 3f * scaleFactor
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+        }
+
+        canvas.save()
+        canvas.translate(x, y) // Move canvas origin to the ear position
+        // Rotate based on roll angle (semicircle opens downwards initially)
+        canvas.rotate(rollAngle)
+        // Draw a semicircle arc
+        val rectF = android.graphics.RectF(
+            -indicatorRadius,
+            -indicatorRadius,
+            indicatorRadius,
+            indicatorRadius
+        )
+        // Arc from 180 to 360 degrees (bottom half of circle)
+        canvas.drawArc(rectF, 180f, 180f, false, paint)
+
+        // Draw the moving dot on the semicircle
+        val dotPaint = Paint().apply {
+            color = Color.BLACK // Black dot
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        val dotRadius = 3f * scaleFactor
+
+        // Calculate dot position on the semicircle based on roll angle
+        // Map rollAngle (e.g., -180 to 180) to an angle on the semicircle (180 to 360 degrees)
+        // We need to map the relevant range of roll angle to the 180-degree sweep of the arc.
+        // Let's assume roll angle is most relevant in a range like -90 to +90 degrees.
+        // Map -90 to 180 degrees on arc, 0 to 270 degrees on arc, +90 to 360 degrees on arc.
+        // A simpler approach: Map the angle directly to a position along the arc length.
+        // The total arc length is PI * radius.
+        // Let's assume roll angle maps linearly to the arc from -90deg roll -> start of arc, +90deg roll -> end of arc.
+        // Map rollAngle from [-90, 90] to [0, PI].
+        val maxIndicatorRoll = 90f // Assuming indicator covers -90 to +90 degrees of roll
+        val clampedRoll = rollAngle.coerceIn(-maxIndicatorRoll, maxIndicatorRoll)
+        // Normalize clamped roll to [0, 1]
+        val normalizedRoll = (clampedRoll + maxIndicatorRoll) / (2 * maxIndicatorRoll)
+
+        // Calculate angle on the semicircle arc in radians (0 to PI) for the dot position
+        // The arc starts at 180 degrees (PI radians) and goes to 360 degrees (2*PI radians).
+        // A 0 normalizedRoll should be at the start (180 deg), 1 at the end (360 deg).
+        // Angle on arc = 180 + normalizedRoll * 180 (degrees) -> PI + normalizedRoll * PI (radians)
+        // Map normalized roll [0, 1] to angle [180, 360] degrees on the arc.
+        // 0 maps to 180 degrees (PI radians), 1 maps to 360 degrees (2*PI radians)
+        val dotAngleRad = (180f + normalizedRoll * 180f) * (PI.toFloat() / 180f) // Radians
+
+        // Calculate Cartesian coordinates (relative to origin at x, y) on the circle
+        // In 2D graphics, angle 0 is usually right, 90 is down, 180 is left, 270 is up.
+        // We need to calculate coordinates on a circle with radius `indicatorRadius`.
+        val dotX = indicatorRadius * cos(dotAngleRad).toFloat()
+        val dotY = indicatorRadius * sin(dotAngleRad).toFloat()
+
+        // Draw the dot at the calculated position relative to the fixed semicircle (origin is at x, y)
+        canvas.drawCircle(dotX, dotY, dotRadius, dotPaint)
+
+        canvas.restore()
     }
 }

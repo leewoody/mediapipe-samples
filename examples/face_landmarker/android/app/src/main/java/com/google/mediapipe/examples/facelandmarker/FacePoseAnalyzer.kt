@@ -96,14 +96,14 @@ class FacePoseAnalyzer {
     // Face landmark indices for MediaPipe Face Landmarker
     companion object {
         // Face contour points
-        private const val NOSE_TIP = 1
-        private const val LEFT_EYE = 33
-        private const val RIGHT_EYE = 263
-        private const val LEFT_MOUTH = 61
-        private const val RIGHT_MOUTH = 291
-        private const val LEFT_EAR = 234
-        private const val RIGHT_EAR = 454
-        private const val CHIN = 152
+         const val NOSE_TIP = 1
+         const val LEFT_EYE = 33
+         const val RIGHT_EYE = 263
+         const val LEFT_MOUTH = 61
+         const val RIGHT_MOUTH = 291
+         const val LEFT_EAR = 234
+         const val RIGHT_EAR = 454
+         const val CHIN = 152
 
         // Eye landmarks
         private val LEFT_EYE_LANDMARKS = listOf(33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246)
@@ -167,7 +167,10 @@ class FacePoseAnalyzer {
         val eyePositions: EyePositions,
         val irisPositions: IrisPositions,
         val screenDistance: Float? = null,
-        val fatigueMetrics: FatigueMetrics? = null
+        val fatigueMetrics: FatigueMetrics? = null,
+        val v2Yaw: Float = 0f, // New v2 yaw
+        val v2Pitch: Float = 0f, // New v2 pitch
+        val v2Roll: Float = 0f // New v2 roll
     )
 
     data class EyePositions(
@@ -243,6 +246,9 @@ class FacePoseAnalyzer {
         // Calculate fatigue metrics
         val fatigueMetrics = calculateFatigueMetrics(landmarks)
 
+        // Calculate v2 head pose estimation (based on user-provided Python logic)
+        val (v2Yaw, v2Pitch, v2Roll) = calculateFacePoseV2(landmarks, imageWidth, imageHeight)
+
         return FacePose(
             yaw = filteredYaw,
             pitch = filteredPitch,
@@ -253,7 +259,10 @@ class FacePoseAnalyzer {
             eyePositions = eyePositions,
             irisPositions = irisPositions,
             screenDistance = screenDistance,
-            fatigueMetrics = fatigueMetrics
+            fatigueMetrics = fatigueMetrics,
+            v2Yaw = v2Yaw,
+            v2Pitch = v2Pitch,
+            v2Roll = v2Roll
         )
     }
 
@@ -547,5 +556,178 @@ class FacePoseAnalyzer {
 
         // Weighted combination (adjust weights as needed)
         return (opennessFactor * 0.4f + varianceFactor * 0.3f + blinkFactor * 0.3f).coerceIn(0f, 1f)
+    }
+
+    // New function to calculate head pose based on v2 logic
+    private fun calculateFacePoseV2(
+        landmarks: List<NormalizedLandmark>,
+        imageWidth: Int,
+        imageHeight: Int
+    ): Triple<Float, Float, Float> {
+
+        // Ensure required landmarks exist
+        if (landmarks.size <= 263) {
+            return Triple(0f, 0f, 0f) // Return zero angles if landmarks are insufficient
+        }
+
+        val noseTip = landmarks[1]
+        val chin = landmarks[152]
+        val leftEye = landmarks[33]
+        val rightEye = landmarks[263]
+
+        // Convert normalized landmarks to image coordinates for calculation
+        val noseTipImg = Triple(noseTip.x() * imageWidth, noseTip.y() * imageHeight, noseTip.z())
+        val chinImg = Triple(chin.x() * imageWidth, chin.y() * imageHeight, chin.z())
+        val leftEyeImg = Triple(leftEye.x() * imageWidth, leftEye.y() * imageHeight, leftEye.z())
+        val rightEyeImg = Triple(rightEye.x() * imageWidth, rightEye.y() * imageHeight, rightEye.z())
+
+        // Calculate angles based on provided Python logic
+        // Roll: atan2(delta_y_eyes, delta_x_eyes)
+        val rollRad = atan2(
+            (rightEyeImg.second - leftEyeImg.second),
+            (rightEyeImg.first - leftEyeImg.first)
+        )
+        // Pitch: atan2(delta_y_chin_nose, delta_z_chin_nose) - Note: Z is typically inverted in screen space
+        // Python code uses chin[2] - nose_tip[2] which implies Z increases away from camera. MediaPipe Z seems to increase towards camera.
+        // Let's use noseTip.z() - chin.z() to align with a Z axis pointing away from the camera.
+        val pitchRad = atan2(
+            (chinImg.second - noseTipImg.second),
+            (noseTipImg.third - chinImg.third) // Adjusted Z difference
+        )
+        // Yaw: atan2(delta_x_nose_chin, delta_z_nose_chin) - Note: Z is typically inverted in screen space
+        // Python code uses nose_tip[2] - chin[2] for Z difference, same as Pitch.
+        // Python code uses nose_tip[0] - chin[0] for X difference.
+        // Let's use chinImg.first - noseTipImg.first for X difference (consistent direction check) and noseTipImg.third - chinImg.third for Z difference.
+        val yawRad = atan2(
+            (chinImg.first - noseTipImg.first), // Adjusted X difference
+            (noseTipImg.third - chinImg.third) // Adjusted Z difference
+        )
+
+        // Convert radians to degrees
+        val rollDeg = Math.toDegrees(rollRad.toDouble()).toFloat()
+        // Adjust Pitch and Yaw based on the coordinate system used in the Python example.
+        // The Python example's atan2 arguments for Pitch and Yaw suggest a different coordinate system or interpretation.
+        // Let's start with the direct translation and adjust if the angles are inverted or offset.
+        val pitchDeg = Math.toDegrees(pitchRad.toDouble()).toFloat()
+        val yawDeg = Math.toDegrees(yawRad.toDouble()).toFloat()
+
+        // The Python yaw calculation might be effectively `atan2(chin_x - nose_x, chin_z - nose_z)`
+        // and pitch might be `atan2(nose_y - chin_y, nose_z - chin_z)`. Let's re-check the Python code.
+        // Python: pitch = np.arctan2(chin[1] - nose_tip[1], chin[2] - nose_tip[2]) # delta Y, delta Z
+        // Python: yaw = np.arctan2(nose_tip[0] - chin[0], nose_tip[2] - chin[2]) # delta X, delta Z
+        // It seems the Z difference in Python is `chin[2] - nose_tip[2]` for pitch and `nose_tip[2] - chin[2]` for yaw.
+        // This is inconsistent. Let's assume one is correct and apply to both.
+        // Standard computer graphics: +X right, +Y down, +Z into screen.
+        // Pitch (rotation around X): Looking down is positive pitch. If Y increases downwards, chin_y > nose_y means negative pitch. Z increases towards camera means chin_z < nose_z. atan2(dy, dz). If +Y down, +Z into screen, atan2(chin_y-nose_y, chin_z-nose_z) would give angle in YZ plane.
+        // Yaw (rotation around Y): Looking right is positive yaw. If +X right, +Z into screen, atan2(dx, dz). atan2(nose_x-chin_x, nose_z-chin_z) would give angle in XZ plane.
+        // Roll (rotation around Z): Tilting head right is positive roll. If +X right, +Y down, atan2(dy, dx). atan2(right_eye_y - left_eye_y, right_eye_x - left_eye_x) seems correct for roll around Z.
+
+        // Let's trust the user's provided Python code's atan2 arguments directly.
+        // Pitch: atan2(delta_y_chin_nose, delta_z_chin_nose) => atan2(chin_y - nose_y, chin_z - nose_z)
+        // Yaw: atan2(delta_x_nose_chin, delta_z_nose_chin) => atan2(nose_x - chin_x, nose_z - chin_z)
+
+        val pitchRadCorrected = atan2(
+            (chinImg.second - noseTipImg.second), // delta Y
+            (chinImg.third - noseTipImg.third) // delta Z (using chin - nose as in Python for Pitch)
+        )
+
+        val yawRadCorrected = atan2(
+            (noseTipImg.first - chinImg.first), // delta X
+            (noseTipImg.third - chinImg.third) // delta Z (using nose - chin as in Python for Yaw)
+        )
+
+        val pitchDegCorrected = Math.toDegrees(pitchRadCorrected.toDouble()).toFloat()
+        val yawDegCorrected = Math.toDegrees(yawRadCorrected.toDouble()).toFloat()
+
+        // The Python example seems to have inconsistent Z differences for pitch and yaw.
+        // Let's assume a standard coordinate system (+X right, +Y up, +Z away from camera)
+        // MediaPipe landmarks: +X right, +Y down, +Z towards camera
+        // To convert MediaPipe to a standard (+Y up, +Z away) system:
+        // standard_y = -mediapipe_y
+        // standard_z = -mediapipe_z
+        // standard_x = mediapipe_x
+
+        // Roll (around Z): atan2(std_dy, std_dx) = atan2(-mp_dy, mp_dx) = atan2(-(right_y-left_y), right_x-left_x) = atan2(left_y-right_y, right_x-left_x)
+        // This is atan2(delta_y, delta_x) from left to right eye, which is consistent with Python roll logic.
+        // Pitch (around X): Looking up is positive pitch. atan2(std_dy, std_dz) = atan2(-mp_dy, -mp_dz) = atan2(mp_dy, mp_dz)
+        // atan2(nose_y - chin_y, nose_z - chin_z) using MediaPipe coords.
+        // Yaw (around Y): Looking right is positive yaw. atan2(std_dx, std_dz) = atan2(mp_dx, -mp_dz)
+        // atan2(nose_x - chin_x, chin_z - nose_z) using MediaPipe coords.
+
+        // Let's re-implement using MediaPipe coordinates directly based on expected rotation directions.
+        // Pitch (rotation around X): +ve pitch is looking up. Use nose-to-chin vector. atan2(delta_y, delta_z)
+        // Y increases downwards in MediaPipe. Z increases towards camera.
+        // Vector from chin to nose: (nose_x-chin_x, nose_y-chin_y, nose_z-chin_z)
+        // Pitch: rotation in YZ plane. atan2(delta_y, delta_z). If +Y down, +Z towards camera, looking up means nose_y < chin_y (neg dy), nose_z > chin_z (pos dz). atan2(neg, pos) is Q2 angle.
+        // Let's try atan2(chin_y - nose_y, nose_z - chin_z)
+        val pitchRadMP = atan2(
+            (chinImg.second - noseTipImg.second),
+            (noseTipImg.third - chinImg.third)
+        )
+
+        // Yaw (rotation around Y): +ve yaw is looking right. Use chin-to-nose vector. atan2(delta_x, delta_z)
+        // X increases rightwards in MediaPipe. Z increases towards camera.
+        // Yaw: rotation in XZ plane. atan2(delta_x, delta_z). If +X right, +Z towards camera, looking right means nose_x > chin_x (pos dx), nose_z > chin_z (pos dz). atan2(pos, pos) is Q1 angle.
+        // Let's try atan2(nose_x - chin_x, nose_z - chin_z)
+         val yawRadMP = atan2(
+            (noseTipImg.first - chinImg.first),
+            (noseTipImg.third - chinImg.third)
+         )
+
+        // Roll (rotation around Z): +ve roll is tilting right. Use left-to-right eye vector. atan2(delta_y, delta_x)
+        // Y increases downwards, X increases rightwards.
+        // Vector from left eye to right eye: (right_x-left_x, right_y-left_y, right_z-left_z)
+        // Roll: rotation in XY plane. atan2(delta_y, delta_x). Tilting right means right_y > left_y (pos dy), right_x > left_x (pos dx). atan2(pos, pos) is Q1 angle.
+        // This matches the user's Python roll calculation.
+        val rollRadMP = atan2(
+            (rightEyeImg.second - leftEyeImg.second),
+            (rightEyeImg.first - leftEyeImg.first)
+        )
+
+        val pitchDegMP = Math.toDegrees(pitchRadMP.toDouble()).toFloat()
+        val yawDegMP = Math.toDegrees(yawRadMP.toDouble()).toFloat()
+        val rollDegMP = Math.toDegrees(rollRadMP.toDouble()).toFloat()
+
+        // The Python code's Z difference for Pitch was chin-nose, for Yaw was nose-chin.
+        // Let's try the Python Z differences exactly, but using MediaPipe coords
+        val pitchRadPy = atan2(
+             (chinImg.second - noseTipImg.second), // delta Y (chin - nose)
+             (chinImg.third - noseTipImg.third) // delta Z (chin - nose)
+        )
+        val yawRadPy = atan2(
+            (noseTipImg.first - chinImg.first), // delta X (nose - chin)
+            (noseTipImg.third - chinImg.third) // delta Z (nose - chin)
+        )
+
+        val pitchDegPy = Math.toDegrees(pitchRadPy.toDouble()).toFloat()
+        val yawDegPy = Math.toDegrees(yawRadPy.toDouble()).toFloat()
+        val rollDegPy = rollDegMP // Roll calculation was consistent
+
+        // Let's use the angles derived directly from the Python atan2 arguments, adjusting for MediaPipe's +Z towards camera.
+        // Python Pitch: atan2(chin_y - nose_y, chin_z - nose_z)
+        // Python Yaw: atan2(nose_x - chin_x, nose_z - chin_z)
+        // MediaPipe Z: increases towards camera. Let's use (nose_z - chin_z) as the Z difference magnitude
+        // And rely on atan2 to give the correct sign based on coordinate system.
+
+        val pitchRadFinal = atan2(
+            (chinImg.second - noseTipImg.second), // Y diff (chin - nose)
+            (chinImg.third - noseTipImg.third) // Z diff (chin - nose)
+        )
+
+        val yawRadFinal = atan2(
+            (noseTipImg.first - chinImg.first), // X diff (nose - chin)
+            (noseTipImg.third - chinImg.third) // Z diff (nose - chin)
+        )
+
+        val pitchDegFinal = Math.toDegrees(pitchRadFinal.toDouble()).toFloat()
+        val yawDegFinal = Math.toDegrees(yawRadFinal.toDouble()).toFloat()
+        val rollDegFinal = rollDegMP // Roll calculation is consistent
+
+        // Note: The exact mapping of atan2 results to Euler angles depends heavily on the chosen coordinate system and rotation order.
+        // The Python code's calculation might assume a specific coordinate system that doesn't directly map to MediaPipe's.
+        // We are implementing the atan2 calls as written in Python, using MediaPipe coordinates scaled by image dimensions.
+        // The resulting angles might require sign inversion or offset depending on how they are interpreted visually.
+
+        return Triple(yawDegFinal, pitchDegFinal, rollDegFinal)
     }
 } 
