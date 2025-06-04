@@ -12388,3 +12388,169 @@ _**Assistant**_
 
 ---
 
+
+
+好的，我理解您的意思。您希望將立方體靠近臉部的那一面（黑色面）的中心精確地對齊到鼻尖的 2D 投影位置，並且整個立方體結構的旋轉是基於鼻尖計算出來的頭部姿態。
+
+這需要對立方體頂點的定義和投影進行調整。我會：
+
+1.  保留根據 landmarks 邊界框計算立方體尺寸 (`cubeWidth`, `cubeHeight`, `cubeDepth`) 的邏輯。
+2.  調整立方體頂點的 Z 座標定義，使其在局部座標系中以 **前表面中心** 為原點。
+3.  將原始頭部姿態角度（基於鼻尖）應用到這些以**前表面中心**為原點定義的 3D 頂點上。
+4.  將旋轉後的頂點投影到 2D 螢幕座標，並將這個**前表面中心**的投影位置對齊到鼻尖的螢幕座標 (`centerX`, `centerY`)。
+5.  保持黑色前表面、白色其他面和邊緣的繪製邏輯，以及中心顯示角度的球體。
+
+這樣做可以確保立方體的黑色面中心精確定位於鼻尖，並且立方體會隨著頭部姿態正確旋轉。
+
+
+---
+
+```diff
+          // val cubeShiftZ = -cubeSize / 2f // Shift the cube backward by half its depth
+  
+-         // Define cube vertices with front face always facing camera
++         // Define cube vertices with front face centered at (0,0,0) in local space
+          val vertices = arrayOf(
+-             floatArrayOf(-cubeWidth / 2f, -cubeHeight / 2f, cubeDepth / 2f),  // 0: left-bottom-front
+-             floatArrayOf(cubeWidth / 2f, -cubeHeight / 2f, cubeDepth / 2f),   // 1: right-bottom-front
+-             floatArrayOf(cubeWidth / 2f, cubeHeight / 2f, cubeDepth / 2f),    // 2: right-top-front
+-             floatArrayOf(-cubeWidth / 2f, cubeHeight / 2f, cubeDepth / 2f),   // 3: left-top-front
+-             floatArrayOf(-cubeWidth / 2f, -cubeHeight / 2f, -cubeDepth / 2f), // 4: left-bottom-back
+-             floatArrayOf(cubeWidth / 2f, -cubeHeight / 2f, -cubeDepth / 2f),  // 5: right-bottom-back
+-             floatArrayOf(cubeWidth / 2f, cubeHeight / 2f, -cubeDepth / 2f),   // 6: right-top-back
+-             floatArrayOf(-cubeWidth / 2f, cubeHeight / 2f, -cubeDepth / 2f)   // 7: left-top-back
++             floatArrayOf(-cubeWidth / 2f, -cubeHeight / 2f, 0f),  // 0: left-bottom-front
++             floatArrayOf(cubeWidth / 2f, -cubeHeight / 2f, 0f),   // 1: right-bottom-front
++             floatArrayOf(cubeWidth / 2f, cubeHeight / 2f, 0f),    // 2: right-top-front
++             floatArrayOf(-cubeWidth / 2f, cubeHeight / 2f, 0f),   // 3: left-top-front
++             floatArrayOf(-cubeWidth / 2f, -cubeHeight / 2f, -cubeDepth), // 4: left-bottom-back
++             floatArrayOf(cubeWidth / 2f, -cubeHeight / 2f, -cubeDepth),  // 5: right-bottom-back
++             floatArrayOf(cubeWidth / 2f, cubeHeight / 2f, -cubeDepth),   // 6: right-top-back
++             floatArrayOf(-cubeWidth / 2f, cubeHeight / 2f, -cubeDepth)   // 7: left-top-back
+          )
+  
+```
+
+```diff
+          // Project vertices to 2D with scaling
+          val projectedVertices = rotatedVertices.map { vertex ->
+-             val scale = 1f / (vertex[2] / (500f * scaleFactor) + 1f)
++             // Adjust perspective scaling factor for a better visual fit
++             val scale = 1f / (vertex[2] / (500f * scaleFactor) + 1f) // Adjusted back to 500f
+              floatArrayOf(
+                  vertex[0] * scale + centerX,
+```
+
+```diff
+          // Draw main sphere
+          spherePaint.color = Color.argb(200, 255, 255, 255)
++         // Position the sphere at the nose tip's 2D projection
+          canvas.drawCircle(centerX, centerY, sphereRadius, spherePaint)
+  
+```
+
+```diff
+          // Draw yaw indicator (horizontal circle)
+          indicatorPaint.color = yawColor
++         // Position indicator at the nose tip's 2D projection
+          canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, indicatorPaint)
+  
+          // Draw pitch indicator (vertical circle)
+          indicatorPaint.color = pitchColor
+          canvas.save()
++         // Rotate around the nose tip's 2D projection
+          canvas.rotate(90f, centerX, centerY)
+          canvas.drawCircle(centerX, centerY, sphereRadius * 0.8f, indicatorPaint)
+```
+
+```diff
+          indicatorPaint.color = rollColor
+          canvas.save()
++         // Rotate around the nose tip's 2D projection
+          canvas.rotate(facePose.roll, centerX, centerY)
+          canvas.drawLine(
+-             centerX - sphereRadius,
+-             centerY,
+-             centerX + sphereRadius,
+-             centerY,
++             centerX - sphereRadius, // Start point X (relative to nose tip center)
++             centerY, // Start point Y (relative to nose tip center)
++             centerX + sphereRadius, // End point X (relative to nose tip center)
++             centerY, // End point Y (relative to nose tip center)
+              indicatorPaint
+          )
+```
+
+```diff
+          canvas.drawText(
+              "Y:${String.format("%.0f", facePose.yaw)}°",
+-             centerX - sphereRadius * 0.5f,
+-             centerY - sphereRadius * 0.5f,
++             // Position text relative to the nose tip's 2D projection
++             centerX - sphereRadius * 0.7f, // Adjusted position
++             centerY - sphereRadius * 0.7f, // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+          canvas.drawText(
+              "P:${String.format("%.0f", facePose.pitch)}°",
+-             centerX + sphereRadius * 0.5f,
+-             centerY - sphereRadius * 0.5f,
++             // Position text relative to the nose tip's 2D projection
++             centerX + sphereRadius * 0.7f, // Adjusted position
++             centerY - sphereRadius * 0.7f, // Adjusted position
+              textPaint
+          )
+```
+
+```diff
+          textPaint.color = rollColor
+          canvas.drawText(
+-             "R:${String.format("%.0f", facePose.roll)}°",
++             "R:${String.format("%.0f", facePose.roll)}°", // Keep original roll
+              centerX,
+-             centerY + sphereRadius * 0.5f,
++             // Position text relative to the nose tip's 2D projection
++             centerY + sphereRadius * 0.7f, // Adjusted position
+              textPaint
+          )
+```
+
+---
+
+思緒：
+用戶希望立方體靠近臉部的黑色那一面的中心精確對齊鼻尖的 2D 投影位置，並且立方體的旋轉由鼻尖計算的頭部姿態控制。
+
+我已經在 `drawHeadPoseCube` 函數中進行了以下修改來實現這一點：
+1.  修改了立方體頂點的定義。現在，前表面（黑色面）的頂點 Z 座標設置為 0，使其在局部座標系中位於 Z=0 平面。後表面的 Z 座標設置為 `-cubeDepth`。這使得立方體的前表面中心位於局部座標系的 (0, 0, 0)。
+2.  應用原始頭部姿態角度 (`facePose.yaw`, `facePose.pitch`, `facePose.roll`) 進行旋轉操作仍然保留，但現在是圍繞局部座標系的 (0, 0, 0) 點進行旋轉。
+3.  在將旋轉後的頂點投影到 2D 螢幕座標時，通過加上 `centerX` 和 `centerY`，將這個局部座標系的 (0, 0, 0) 點（也就是立方體前表面的中心）的投影位置對齊到鼻尖的螢幕座標 (`centerX`, `centerY`)。
+4.  確保了中心旋轉球體及其角度文字的繪製位置也相對應地對齊到鼻尖的螢幕座標 (`centerX`, `centerY`)。
+
+這樣，立方體的黑色前表面中心就精確地錨定在鼻尖的 2D 位置，並且整個立方體會隨著頭部的轉動而圍繞鼻尖旋轉。
+
+返回用戶：確認修改完成，說明修改的邏輯（前表面中心對齊鼻尖，並應用鼻尖姿態進行旋轉）。好的，我已經修改了 `drawHeadPoseCube` 函數，現在立方體靠近臉部的黑色那一面的中心會精確地對齊到鼻尖的 2D 投影位置。
+
+修改的主要邏輯是：
+1.  重新定義了立方體的頂點，使其在局部座標系中以前表面的中心為原點 (0, 0, 0)。
+2.  將根據鼻尖計算出來的頭部姿態角度應用到這個以**前表面中心**為原點的立方體上進行旋轉。
+3.  在將旋轉後的頂點投影到螢幕上時，將這個**前表面中心**的投影位置對齊到鼻尖的螢幕座標。
+
+同時，中心顯示角度的球體及其文字也被確保正確地定位在鼻尖的 2D 投影位置上。現在立方體的行為應該符合您的要求了。
+
+---
+
+_**User**_
+
+the drawHeadPoseVisualization position on the nose, the has a nose line follow the pitch up/down, yaw left/right, roll
+
+---
+
+_**Assistant**_
+
+
+
+---
+

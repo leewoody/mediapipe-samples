@@ -166,16 +166,16 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 drawFaceLandmarks(canvas, faceLandmarks, offsetX, offsetY, index)
 
                 // Draw head pose cube on the face (centered at nose)
-                val noseTip = faceLandmarks[1] // Nose tip landmark
-                val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
-                val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
-                if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
-                    drawHeadPoseCube(canvas, faceLandmarks, facePose, noseX, noseY)
-                }
+                // val noseTip = faceLandmarks[1] // Nose tip landmark
+                // val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+                // val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+                // if (showFacePoseInfo) { // Use HeadPoseVisualization flag for the cube on face
+                //     drawHeadPoseCube(canvas, faceLandmarks, facePose, noseX, noseY)
+                // }
 
                 // Draw face number near the face with matching color
-                val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
-                val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 150f
+                // val faceNumberX = noseTip.x() * imageWidth * scaleFactor + offsetX
+                // val faceNumberY = noseTip.y() * imageHeight * scaleFactor + offsetY - 150f
                 
                 // Draw colored background for face number
                 // val numberBackgroundPaint = Paint().apply {
@@ -288,10 +288,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 val chin = faceLandmarks[152]
                 val chinX = chin.x() * imageWidth * scaleFactor + offsetX
                 val chinY = chin.y() * imageHeight * scaleFactor + offsetY
-                if (showHeadPoseAxes) {
-                    drawHeadPoseVisualization(canvas, facePose, chinX, chinY)
-                }
+
+                // Get nose tip and forehead points for reference
+                val noseTip = faceLandmarks[1]  // Nose tip landmark
+                val forehead = faceLandmarks[10]  // Forehead landmark
+
+                val noseX = noseTip.x() * imageWidth * scaleFactor + offsetX
+                val noseY = noseTip.y() * imageHeight * scaleFactor + offsetY
+                
+                // if (showHeadPoseAxes) {
+                //     drawHeadPoseVisualization(canvas, facePose, chinX, chinY)
+                // }
                 if (showGaze) {
+                     //drawHeadPoseVisualization(canvas, facePose, noseX, noseY)
+                    drawSimpleHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
                     drawGazeVisualization(canvas, facePose, chinX, chinY)
                 }
             }
@@ -976,7 +986,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         textPaint.textSize = 30f  // Reset text size
 
         // Draw head pose visualization (original)
-        if (showHeadPoseVisualization) {
+        if (showHeadPoseAxes) {
             val headPoseX = baseTextX
             val headPoseY = baseTextY + lineHeight * 2
             drawHeadPoseVisualization(canvas, facePose, headPoseX, headPoseY)
@@ -1364,14 +1374,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Draw roll value
         textPaint.color = rollColor
-        canvas.drawText(
+            canvas.drawText(
             "R:${String.format("%.0f", facePose.roll)}°", // Keep original roll
             centerX,
             // Position text relative to the nose tip's 2D projection
             centerY + sphereRadius * 0.7f, // Adjusted position
-            textPaint
-        )
-    }
+                textPaint
+            )
+        }
 
     private fun drawSimpleHeadPoseAxes(
         canvas: Canvas,
