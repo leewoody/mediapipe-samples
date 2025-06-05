@@ -2377,7 +2377,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Calculate dot position based on yaw angle
         // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
-        val maxIndicatorYaw = 60f // Assuming indicator covers -60 to +60 degrees of yaw (adjust for sensitivity)
+        val maxIndicatorYaw = 40f // Assuming indicator covers -60 to +60 degrees of yaw (adjust for sensitivity)
         val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
         // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
         // When yaw is -maxIndicatorYaw, dotX should be -indicatorLength/2f
@@ -2425,7 +2425,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Calculate dot position based on pitch angle
         // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
-        val maxIndicatorPitch = 60f // Assuming indicator covers -60 to +60 degrees of pitch (adjust for sensitivity)
+        val maxIndicatorPitch = 40f // Assuming indicator covers -60 to +60 degrees of pitch (adjust for sensitivity)
         val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
         // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
         // Note: Positive pitch means looking down, which corresponds to a larger Y value on the screen (Y is down).
@@ -2488,7 +2488,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // The total arc length is PI * radius.
         // Let's assume roll angle maps linearly to the arc from -90deg roll -> start of arc, +90deg roll -> end of arc.
         // Map rollAngle from [-90, 90] to [0, PI].
-        val maxIndicatorRoll = 90f // Assuming indicator covers -90 to +90 degrees of roll
+        val maxIndicatorRoll = 40f // Assuming indicator covers -90 to +90 degrees of roll
         val clampedRoll = rollAngle.coerceIn(-maxIndicatorRoll, maxIndicatorRoll)
         // Normalize clamped roll to [0, 1]
         val normalizedRoll = (clampedRoll + maxIndicatorRoll) / (2 * maxIndicatorRoll)
