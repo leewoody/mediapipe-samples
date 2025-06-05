@@ -14697,9 +14697,393 @@ _**Assistant**_
 
 ---
 
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 60f // Assuming indicator covers -60 to +60 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 30f // Assuming indicator covers -30 to +30 degrees of yaw (adjust for sensitivity)
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 60f // Assuming indicator covers -60 to +60 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 30f // Assuming indicator covers -30 to +30 degrees of pitch (adjust for sensitivity)
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+---
+
 
 
 ---
+
+好的，為了讓圓點在指示器上移動更靈敏，我將進一步減小 `maxIndicatorYaw` 和 `maxIndicatorPitch` 的值。我會將它們從 30f 減小到 15f。
+
+這會使得即使是很小的頭部轉動角度，圓點也能在指示器上移動較大的距離，從而提高靈敏度。
+
+我將修改 `OverlayView.kt` 中的 `maxIndicatorYaw` 和 `maxIndicatorPitch`：
+
+
+---
+
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 30f // Assuming indicator covers -30 to +30 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 15f // Assuming indicator covers -15 to +15 degrees of yaw (adjust for sensitivity)
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 30f // Assuming indicator covers -30 to +30 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 15f // Assuming indicator covers -15 to +15 degrees of pitch (adjust for sensitivity)
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+---
+
+
+
+---
+
+好的，為了讓圓點在指示器上移動更靈敏，我將再次減小 `maxIndicatorYaw` 和 `maxIndicatorPitch` 的值。我會將它們從 15f 減小到 10f。
+
+這將使圓點對頭部轉動更加敏感。
+
+我將修改 `OverlayView.kt` 中的 `maxIndicatorYaw` 和 `maxIndicatorPitch`：
+
+
+---
+
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 15f // Assuming indicator covers -15 to +15 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 10f // Assuming indicator covers -10 to +10 degrees of yaw (adjust for sensitivity)
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 15f // Assuming indicator covers -15 to +15 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 10f // Assuming indicator covers -10 to +10 degrees of pitch (adjust for sensitivity)
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+---
+
+
+
+---
+
+好的，為了讓圓點在指示器上移動更靈敏，我將再次減小 `maxIndicatorYaw` 和 `maxIndicatorPitch` 的值。我會將它們從 10f 減小到 5f。
+
+這將使圓點對頭部轉動更加敏感。
+
+我將修改 `OverlayView.kt` 中的 `maxIndicatorYaw` 和 `maxIndicatorPitch`：
+
+
+---
+
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 10f // Assuming indicator covers -10 to +10 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 5f // Assuming indicator covers -5 to +5 degrees of yaw (adjust for sensitivity)
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 10f // Assuming indicator covers -10 to +10 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 5f // Assuming indicator covers -5 to +5 degrees of pitch (adjust for sensitivity)
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+---
+
+
+
+---
+
+好的，為了讓圓點在指示器上移動更靈敏，我將再次減小 `maxIndicatorYaw` 和 `maxIndicatorPitch` 的值。我會將它們從 5f 減小到 3f。
+
+這將使圓點對頭部轉動更加敏感。
+
+我將修改 `OverlayView.kt` 中的 `maxIndicatorYaw` 和 `maxIndicatorPitch`：
+
+
+---
+
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 5f // Assuming indicator covers -5 to +5 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 3f // Assuming indicator covers -3 to +3 degrees of yaw (adjust for sensitivity)
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 5f // Assuming indicator covers -5 to +5 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 3f // Assuming indicator covers -3 to +3 degrees of pitch (adjust for sensitivity)
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+---
+
+
+
+---
+
+好的，為了讓圓點在指示器上移動更靈敏，我將再次減小 `maxIndicatorYaw` 和 `maxIndicatorPitch` 的值。我會將它們從 3f 減小到 1f。
+
+這將使圓點對頭部轉動非常敏感，僅僅 +/- 1 度的轉動就能讓圓點從指示器中心移動到最邊緣。
+
+我將修改 `OverlayView.kt` 中的 `maxIndicatorYaw` 和 `maxIndicatorPitch`：
+
+
+---
+
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 3f // Assuming indicator covers -3 to +3 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 1f // Assuming indicator covers -1 to +1 degrees of yaw (adjust for sensitivity)
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 3f // Assuming indicator covers -3 to +3 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 1f // Assuming indicator covers -1 to +1 degrees of pitch (adjust for sensitivity)
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+---
+
+
+
+---
+
+好的，我理解您希望圓點移動更靈敏。
+
+目前，我已經將控制 Yaw 和 Pitch 指示器靈敏度的 `maxIndicatorYaw` 和 `maxIndicatorPitch` 值設置得非常小（1 度）。這意味著只要頭部有大約 +/- 1 度的轉動，圓點就應該從指示器的中心移動到最邊緣。這個設置已經是非常高的靈敏度了。
+
+如果圓點的移動仍然感覺不夠靈敏，甚至看起來沒有移動，這可能不是靈敏度設置的問題，而是傳遞給繪圖函數的 Yaw 和 Pitch 角度值 (`facePose.v2Yaw` 和 `facePose.v2Pitch`) 本身沒有足夠的變化，或者沒有被正確地計算和更新。
+
+這些角度值來自 `FacePoseAnalyzer.kt` 文件中的 `analyzeFacePose` 方法，具體是 `calculateFacePoseV2` 函數的結果。
+
+我建議我們現在專注於檢查 `FacePoseAnalyzer.kt` 中的 `calculateFacePoseV2` 函數，看看為什麼 Yaw 和 Pitch 的值可能沒有根據頭部姿態正確地提供變化。
+
+我將會檢查 `calculateFacePoseV2` 函數，特別是計算 `yawRadFinal` 和 `pitchRadFinal` 的部分，確保地標點的引用和數學計算是正確的，並且能夠反映頭部姿態的變化。
+
+---
+
+_**User**_
+
+drawPitchIndicatorNearEar, drawYawIndicatorNearEar, drawRollIndicatorNearEar 以drawHeadPoseOnFace , drawRotationIndicators為主呈現出來, Yaw 指示器是一條水平線, Pitch 指示器是一條垂直線, Roll 指示器為半圓
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+好的，我明白您希望 Yaw、Pitch 和 Roll 指示器在耳朵附近出現時，視覺風格上能與 `drawHeadPoseOnFace` 和 `drawRotationIndicators` 所繪製的指示器相似，同時保持它們固定的形狀（Yaw 水平線、Pitch 垂直線、Roll 半圓）和圓點根據角度移動的功能。
+
+根據您提供的代碼，`drawRotationIndicators` 繪製的 Yaw 和 Pitch 指示器是圓弧，而 Roll 指示器是帶有中心線的圓形。這與 `drawYawIndicatorNearEar` (水平線), `drawPitchIndicatorNearEar` (垂直線), 和 `drawRollIndicatorNearEar` (半圓) 的固定形狀不同。
+
+如果您的目標是讓**耳邊的指示器**具有 `drawRotationIndicators` 的**視覺風格**（顏色、線條粗細等），但保留**耳邊指示器現有的固定形狀**（水平線、垂直線、半圓）和圓點移動邏輯，我將修改 `drawYawIndicatorNearEar`, `drawPitchIndicatorNearEar`, 和 `drawRollIndicatorNearEar` 函數中的繪圖樣式，使其與 `drawRotationIndicators` 中使用的樣式更接近。
+
+具體來說，我會調整它們的線條顏色、透明度（如果 `drawRotationIndicators` 有設定透明度）、線條粗細，以及指示器的大小比例，使其看起來更像 `drawRotationIndicators` 中的元素，但保持其固有的水平線、垂直線和半圓形狀。
+
+我將修改 `OverlayView.kt` 文件中的 `drawYawIndicatorNearEar`, `drawPitchIndicatorNearEar`, 和 `drawRollIndicatorNearEar` 函數，調整繪製指示器形狀的畫筆屬性。
+
+我將開始修改：
+
+
+---
+
+```diff
+          val paint = Paint().apply {
+              color = yawColor
+-             strokeWidth = 3f * scaleFactor
++             strokeWidth = 2f * scaleFactor // Adjust thickness to match rotation indicators
+              isAntiAlias = true
++             alpha = 240 // Match alpha from rotation indicators
+          }
+  
+```
+
+```diff
+          val paint = Paint().apply {
+              color = pitchColor
+-             strokeWidth = 3f * scaleFactor
++             strokeWidth = 2f * scaleFactor // Adjust thickness to match rotation indicators
+              isAntiAlias = true
++             alpha = 240 // Match alpha from rotation indicators
+          }
+  
+```
+
+```diff
+          val paint = Paint().apply {
+              color = rollColor
+-             strokeWidth = 3f * scaleFactor
++             strokeWidth = 2f * scaleFactor // Adjust thickness to match rotation indicators
+              style = Paint.Style.STROKE
+              isAntiAlias = true
++             alpha = 240 // Match alpha from rotation indicators
+          }
+  
+```
+
+---
+
+
+
+---
+
+好的，我已經修改了 `drawYawIndicatorNearEar`、`drawPitchIndicatorNearEar` 和 `drawRollIndicatorNearEar` 函數中繪製指示器形狀的畫筆屬性。
+
+我調整了這些函數中使用的 `Paint` 的 `strokeWidth` 和 `alpha` 值，使其與 `drawRotationIndicators` 函數中繪製指示器的畫筆屬性更接近。
+
+現在，耳邊的 Yaw、Pitch 和 Roll 指示器應該在視覺風格上（線條粗細和透明度）與頭部中心的旋轉指示器更為一致，同時仍然保持：
+-   Yaw 指示器是一條水平直線。
+-   Pitch 指示器是一條垂直直線。
+-   Roll 指示器是一個半圓形。
+-   圓點根據相應的角度在各自的指示器上移動。
+
+請您運行應用程序，查看耳邊指示器的視覺效果是否符合您的期望。
+
+---
+
+_**User**_
+
+Yaw、Pitch 和 Roll 指示器在耳朵附近出現時，除了視覺風格上能與 drawHeadPoseOnFace 和 drawRotationIndicators 所繪製的指示器相似外，同時計算方式也要一樣, 並將Yaw、Pitch投影為直線上,  保持它們固定的形狀（Yaw 水平線、Pitch 垂直線、Roll 半圓）和圓點根據角度移動的功能。
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+好的，我明白了。您希望耳朵附近的 Yaw、Pitch 和 Roll 指示器不僅視覺風格與 `drawRotationIndicators` 相似，而且計算圓點位置所使用的角度值來源也與之相同，即使用 FacePoseAnalyzer 中**原始計算方法**得出的 `yaw`, `pitch`, 和 `roll` 值，而不是 `v2Yaw`, `v2Pitch`, `v2Roll`。同時，保持耳邊指示器固定的形狀（Yaw 水平線、Pitch 垂直線、Roll 半圓）和圓點在這些形狀上移動的功能。
+
+目前的 `drawRotationIndicators` （繪製在臉部中心）使用的是 `facePose.yaw`, `facePose.pitch`, `facePose.roll`。而我們用於耳邊指示器的 `drawYawIndicatorNearEar`, `drawPitchIndicatorNearEar`, `drawRollIndicatorNearEar` 目前使用的是 `facePose.v2Yaw`, `facePose.v2Pitch`, `facePose.v2Roll`。
+
+我將修改 `OverlayView.kt` 中的 `draw` 函數，將傳遞給耳邊指示器繪製函數的角度值改為使用 `facePose.yaw`, `facePose.pitch`, 和 `facePose.roll`。
+
+同時，由於原始計算方法的角度範圍可能與 v2 不同，之前為了靈敏度調整的 `maxIndicatorYaw`, `maxIndicatorPitch`, `maxIndicatorRoll` 值（目前設置為 40f 和 40f）可能不再合適。我會將這些值重新設置為一個稍微大一些的基礎值，例如 60f，這樣在切換到原始角度值後，圓點的移動範圍不會立即過於極端。如果需要，我們可以再進一步調整這些靈敏度參數。
+
+我將修改 `OverlayView.kt` 文件中的 `draw` 函數，並調整 `maxIndicator` 的值：
+
+
+---
+
+```diff
+                          drawPitchIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing, leftEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
+                          // Roll indicator (rightmost position)
+-                         drawRollIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset, leftEarCoords.y + indicatorVerticalOffset, facePose.v2Roll, scaleFactor)
++                         drawRollIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset, leftEarCoords.y + indicatorVerticalOffset, facePose.roll, scaleFactor)
+                      }
+  
+```
+
+```diff
+                          drawPitchIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing, rightEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
+                          // Roll indicator (rightmost position)
+-                         drawRollIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing * 2, rightEarCoords.y + indicatorVerticalOffset, facePose.v2Roll, scaleFactor)
++                         drawRollIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing * 2, rightEarCoords.y + indicatorVerticalOffset, facePose.roll, scaleFactor)
+                      }
+                  }
+```
+
+```diff
+          // Calculate dot position based on yaw angle
+          // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorYaw = 40f // Assuming indicator covers -60 to +60 degrees of yaw (adjust for sensitivity)
++         val maxIndicatorYaw = 60f // Adjusting max indicator range for original angles
+          val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
+          // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Calculate dot position based on pitch angle
+          // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
+-         val maxIndicatorPitch = 40f // Assuming indicator covers -60 to +60 degrees of pitch (adjust for sensitivity)
++         val maxIndicatorPitch = 60f // Adjusting max indicator range for original angles
+          val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
+          // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
+```
+
+```diff
+          // Let's assume roll angle maps linearly to the arc from -90deg roll -> start of arc, +90deg roll -> end of arc.
+          // Map rollAngle from [-90, 90] to [0, PI].
+-         val maxIndicatorRoll = 40f // Assuming indicator covers -90 to +90 degrees of roll
++         val maxIndicatorRoll = 90f // Adjusting max indicator range for original angles (semicircle covers 180 deg)
+          val clampedRoll = rollAngle.coerceIn(-maxIndicatorRoll, maxIndicatorRoll)
+          // Normalize clamped roll to [0, 1]
+```
+
+---
+
+
+
+---
+
+好的，我已根據您的要求修改了 `OverlayView.kt` 文件。
+
+現在，耳朵附近的 Yaw、Pitch 和 Roll 指示器繪製函數 (`drawYawIndicatorNearEar`, `drawPitchIndicatorNearEar`, `drawRollIndicatorNearEar`) 會使用 `FacePoseAnalyzer` 中**原始計算方法**得出的 `facePose.yaw`, `facePose.pitch`, 和 `facePose.roll` 值來決定圓點的位置。
+
+同時，這些指示器會保持您要求的固定形狀：
+-   Yaw 指示器是水平直線。
+-   Pitch 指示器是垂直直線。
+-   Roll 指示器是半圓形。
+-   圓點會繼續根據對應的角度在各自的指示器上移動。
+
+為了適應原始角度值可能有的不同範圍，我將 `maxIndicatorYaw` 和 `maxIndicatorPitch` 重新設置為 60f，`maxIndicatorRoll` 設置為 90f。如果圓點移動的靈敏度或範圍仍不符合您的期望，我們可以再調整這些值。
+
+請您運行應用程序，確認耳邊指示器的行為和視覺效果是否正確。
+
+---
+
+_**User**_
+
+圓點在各自的指示器上移動要更靈敏, 指示器大一點.
+
+---
+
+_**Assistant**_
 
 
 

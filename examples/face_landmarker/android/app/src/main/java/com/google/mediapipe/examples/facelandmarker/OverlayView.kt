@@ -257,17 +257,17 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                     val indicatorVerticalOffset = 0f
                     val indicatorSpacing = 50f * scaleFactor // Horizontal spacing between indicators
 
-                    if (leftEar != null) {
-                        val leftEarCoords = getLandmarkScreenCoords(leftEar, offsetX, offsetY)
+                    // if (leftEar != null) {
+                    //     val leftEarCoords = getLandmarkScreenCoords(leftEar, offsetX, offsetY)
 
-                        // Position indicators horizontally to the left of the left ear
-                        // Yaw indicator (leftmost position)
-                        drawYawIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing * 2, leftEarCoords.y + indicatorVerticalOffset, facePose.yaw, scaleFactor)
-                        // Pitch indicator (middle position)
-                        drawPitchIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing, leftEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
-                        // Roll indicator (rightmost position)
-                        drawRollIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset, leftEarCoords.y + indicatorVerticalOffset, facePose.v2Roll, scaleFactor)
-                    }
+                    //     // Position indicators horizontally to the left of the left ear
+                    //     // Yaw indicator (leftmost position)
+                    //     drawYawIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing * 2, leftEarCoords.y + indicatorVerticalOffset, facePose.yaw, scaleFactor)
+                    //     // Pitch indicator (middle position)
+                    //     drawPitchIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset - indicatorSpacing, leftEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
+                    //     // Roll indicator (rightmost position)
+                    //     drawRollIndicatorNearEar(canvas, leftEarCoords.x - indicatorHorizontalOffset, leftEarCoords.y + indicatorVerticalOffset, facePose.roll, scaleFactor)
+                    // }
 
                     if (rightEar != null) {
                         val rightEarCoords = getLandmarkScreenCoords(rightEar, offsetX, offsetY)
@@ -277,7 +277,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                         // Pitch indicator (middle position)
                         drawPitchIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing, rightEarCoords.y + indicatorVerticalOffset, facePose.pitch, scaleFactor)
                         // Roll indicator (rightmost position)
-                        drawRollIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing * 2, rightEarCoords.y + indicatorVerticalOffset, facePose.v2Roll, scaleFactor)
+                        drawRollIndicatorNearEar(canvas, rightEarCoords.x + indicatorHorizontalOffset + indicatorSpacing * 2, rightEarCoords.y + indicatorVerticalOffset, facePose.roll, scaleFactor)
                     }
                 }
             }
@@ -2351,13 +2351,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         yawAngle: Float,
         scaleFactor: Float
     ) {
-        val indicatorLength = 50f * scaleFactor // Length of the indicator line
+        val indicatorLength = 50f * scaleFactor // Length of the indicator line (increased size)
         val yawColor = Color.rgb(255, 100, 100) // Red color
 
         val paint = Paint().apply {
             color = yawColor
-            strokeWidth = 3f * scaleFactor
+            strokeWidth = 2f * scaleFactor // Adjust thickness to match rotation indicators
             isAntiAlias = true
+            alpha = 240 // Match alpha from rotation indicators
         }
 
         canvas.save()
@@ -2377,7 +2378,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Calculate dot position based on yaw angle
         // Map yawAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
-        val maxIndicatorYaw = 40f // Assuming indicator covers -60 to +60 degrees of yaw (adjust for sensitivity)
+        val maxIndicatorYaw = 30f // Adjusting max indicator range for original angles (increased sensitivity)
         val clampedYaw = yawAngle.coerceIn(-maxIndicatorYaw, maxIndicatorYaw)
         // Map clamped yaw angle [-maxIndicatorYaw, maxIndicatorYaw] to [-indicatorLength/2f, +indicatorLength/2f]
         // When yaw is -maxIndicatorYaw, dotX should be -indicatorLength/2f
@@ -2400,13 +2401,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         pitchAngle: Float,
         scaleFactor: Float
     ) {
-        val indicatorLength = 30f * scaleFactor // Length of the indicator line
+        val indicatorLength = 50f * scaleFactor // Length of the indicator line (increased size)
         val pitchColor = Color.rgb(100, 255, 100) // Green color
 
         val paint = Paint().apply {
             color = pitchColor
-            strokeWidth = 3f * scaleFactor
+            strokeWidth = 2f * scaleFactor // Adjust thickness to match rotation indicators
             isAntiAlias = true
+            alpha = 240 // Match alpha from rotation indicators
         }
 
         canvas.save()
@@ -2425,7 +2427,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
         // Calculate dot position based on pitch angle
         // Map pitchAngle (e.g., -180 to 180) to a position along the indicator line (-indicatorLength/2 to +indicatorLength/2)
-        val maxIndicatorPitch = 40f // Assuming indicator covers -60 to +60 degrees of pitch (adjust for sensitivity)
+        val maxIndicatorPitch = 30f // Adjusting max indicator range for original angles (increased sensitivity)
         val clampedPitch = pitchAngle.coerceIn(-maxIndicatorPitch, maxIndicatorPitch)
         // Map clamped pitch angle [-maxIndicatorPitch, maxIndicatorPitch] to [-indicatorLength/2f, +indicatorLength/2f]
         // Note: Positive pitch means looking down, which corresponds to a larger Y value on the screen (Y is down).
@@ -2447,14 +2449,15 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         rollAngle: Float,
         scaleFactor: Float
     ) {
-        val indicatorRadius = 15f * scaleFactor // Radius of the semicircle
+        val indicatorRadius = 25f * scaleFactor // Radius of the semicircle (increased size)
         val rollColor = Color.rgb(100, 100, 255) // Blue color
 
         val paint = Paint().apply {
             color = rollColor
-            strokeWidth = 3f * scaleFactor
+            strokeWidth = 2f * scaleFactor // Adjust thickness to match rotation indicators
             style = Paint.Style.STROKE
             isAntiAlias = true
+            alpha = 240 // Match alpha from rotation indicators
         }
 
         canvas.save()
@@ -2488,7 +2491,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // The total arc length is PI * radius.
         // Let's assume roll angle maps linearly to the arc from -90deg roll -> start of arc, +90deg roll -> end of arc.
         // Map rollAngle from [-90, 90] to [0, PI].
-        val maxIndicatorRoll = 40f // Assuming indicator covers -90 to +90 degrees of roll
+        val maxIndicatorRoll = 45f // Adjusting max indicator range for original angles (increased sensitivity)
         val clampedRoll = rollAngle.coerceIn(-maxIndicatorRoll, maxIndicatorRoll)
         // Normalize clamped roll to [0, 1]
         val normalizedRoll = (clampedRoll + maxIndicatorRoll) / (2 * maxIndicatorRoll)
