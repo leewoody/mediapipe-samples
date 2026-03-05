@@ -28,6 +28,8 @@ import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
+import com.mitac.mediapipe.examples.facelandmarker.R
+
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.cos
@@ -227,7 +229,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                     if (showGaze) {
                          //drawHeadPoseVisualization(canvas, facePose, noseX, noseY)
                         drawSimpleHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
-                        drawGazeVisualization(canvas, facePose, chinX, chinY)
+                        drawGazeVisualization(canvas, facePose, chinX, chinY, index)
                     }
                 }
 
@@ -238,7 +240,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
                 // Draw gaze direction on the face
                 if (showGaze) {
-                    drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY)
+                    drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY, index)
                 }
 
                 // Draw face pose info
@@ -380,7 +382,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 if (showGaze) {
                      //drawHeadPoseVisualization(canvas, facePose, noseX, noseY)
                     drawSimpleHeadPoseAxes(canvas, facePose, noseX + 100f * scaleFactor, noseY)
-                    drawGazeVisualization(canvas, facePose, chinX, chinY)
+                    drawGazeVisualization(canvas, facePose, chinX, chinY, faceIndex)
                 }
             }
 
@@ -391,7 +393,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
             // Draw gaze direction on the face
             if (showGaze) {
-                drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY)
+                drawGazeOnFace(canvas, faceLandmarks, offsetX, offsetY, faceIndex)
             }
 
             // Draw face pose info
@@ -903,33 +905,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         canvas: Canvas,
         faceLandmarks: List<NormalizedLandmark>,
         offsetX: Float,
-        offsetY: Float
+        offsetY: Float,
+        faceIndex: Int
     ) {
         val facePose = facePoseAnalyzer.analyzeFacePose(faceLandmarks, imageWidth, imageHeight)
 
         // Get eye landmarks
         val leftEye = facePose.eyePositions.leftEye
         val rightEye = facePose.eyePositions.rightEye
-        val leftIris = facePose.irisPositions.leftIris
-        val rightIris = facePose.irisPositions.rightIris
 
         // Calculate eye positions
         val leftEyeX = leftEye.x * imageWidth * scaleFactor + offsetX
         val leftEyeY = leftEye.y * imageHeight * scaleFactor + offsetY
         val rightEyeX = rightEye.x * imageWidth * scaleFactor + offsetX
         val rightEyeY = rightEye.y * imageHeight * scaleFactor + offsetY
-
-        // Draw eye circles
-        // val eyePaint = Paint().apply {
-        //     color = Color.BLUE
-        //     style = Paint.Style.STROKE
-        //     strokeWidth = 2f * scaleFactor
-        //     isAntiAlias = true
-        // }
-
-        // val eyeRadius = 15f * scaleFactor
-        // canvas.drawCircle(leftEyeX, leftEyeY, eyeRadius, eyePaint)
-        // canvas.drawCircle(rightEyeX, rightEyeY, eyeRadius, eyePaint)
 
         // Draw gaze direction
         val gazePaint = Paint().apply {
@@ -938,21 +927,42 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             isAntiAlias = true
         }
 
+        val gazeVector = getGazeVector(faceIndex)
         val gazeLength = 50f * scaleFactor
-        canvas.drawLine(
-            leftEyeX,
-            leftEyeY,
-            leftEyeX + (leftIris.x - 0.5f) * gazeLength,
-            leftEyeY + (leftIris.y - 0.5f) * gazeLength,
-            gazePaint
-        )
-        canvas.drawLine(
-            rightEyeX,
-            rightEyeY,
-            rightEyeX + (rightIris.x - 0.5f) * gazeLength,
-            rightEyeY + (rightIris.y - 0.5f) * gazeLength,
-            gazePaint
-        )
+
+        if (gazeVector != null) {
+            canvas.drawLine(
+                leftEyeX,
+                leftEyeY,
+                leftEyeX + gazeVector.x * gazeLength * 2f,
+                leftEyeY + gazeVector.y * gazeLength * 2f,
+                gazePaint
+            )
+            canvas.drawLine(
+                rightEyeX,
+                rightEyeY,
+                rightEyeX + gazeVector.x * gazeLength * 2f,
+                rightEyeY + gazeVector.y * gazeLength * 2f,
+                gazePaint
+            )
+        } else {
+            val leftIris = facePose.irisPositions.leftIris
+            val rightIris = facePose.irisPositions.rightIris
+            canvas.drawLine(
+                leftEyeX,
+                leftEyeY,
+                leftEyeX + (leftIris.x - 0.5f) * gazeLength,
+                leftEyeY + (leftIris.y - 0.5f) * gazeLength,
+                gazePaint
+            )
+            canvas.drawLine(
+                rightEyeX,
+                rightEyeY,
+                rightEyeX + (rightIris.x - 0.5f) * gazeLength,
+                rightEyeY + (rightIris.y - 0.5f) * gazeLength,
+                gazePaint
+            )
+        }
     }
 
     /**
@@ -1073,7 +1083,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         // Draw gaze visualization
         val gazeX = baseTextX
         val gazeY = baseTextY + lineHeight * 9
-        drawGazeVisualization(canvas, facePose, gazeX, gazeY)
+        drawGazeVisualization(canvas, facePose, gazeX, gazeY, faceIndex)
 
         // Draw head pose cube visualization centered in the pitch area
         // val cubeX = baseTextX + columnWidth * 0.5f // Position horizontally within the column
@@ -2280,11 +2290,51 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         return floatArrayOf(projectedX, projectedY)
     }
 
+    private fun getGazeVector(faceIndex: Int): PointF? {
+        if (results == null || !results!!.faceBlendshapes().isPresent) return null
+        val blendshapesList = results!!.faceBlendshapes().get()
+        if (faceIndex >= blendshapesList.size) return null
+        val blendshapes = blendshapesList[faceIndex]
+        
+        var lookInLeft = 0f
+        var lookOutLeft = 0f
+        var lookUpLeft = 0f
+        var lookDownLeft = 0f
+        var lookInRight = 0f
+        var lookOutRight = 0f
+        var lookUpRight = 0f
+        var lookDownRight = 0f
+
+        for (category in blendshapes) {
+            when (category.categoryName()) {
+                "eyeLookInLeft" -> lookInLeft = category.score()
+                "eyeLookOutLeft" -> lookOutLeft = category.score()
+                "eyeLookUpLeft" -> lookUpLeft = category.score()
+                "eyeLookDownLeft" -> lookDownLeft = category.score()
+                "eyeLookInRight" -> lookInRight = category.score()
+                "eyeLookOutRight" -> lookOutRight = category.score()
+                "eyeLookUpRight" -> lookUpRight = category.score()
+                "eyeLookDownRight" -> lookDownRight = category.score()
+            }
+        }
+
+        val leftDx = lookInLeft - lookOutLeft
+        val leftDy = lookDownLeft - lookUpLeft
+        val rightDx = lookOutRight - lookInRight
+        val rightDy = lookDownRight - lookUpRight
+
+        val avgDx = (leftDx + rightDx) / 2f
+        val avgDy = (leftDy + rightDy) / 2f
+        
+        return PointF(avgDx, avgDy)
+    }
+
     private fun drawGazeVisualization(
         canvas: Canvas,
         facePose: FacePoseAnalyzer.FacePose,
         startX: Float,
-        startY: Float
+        startY: Float,
+        faceIndex: Int
     ) {
         val size = 200f
         val centerX = startX + size / 2
@@ -2314,26 +2364,43 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
             isAntiAlias = true
         }
 
-        // Calculate gaze direction based on iris positions
-        val leftIris = facePose.irisPositions.leftIris
-        val rightIris = facePose.irisPositions.rightIris
-
-        // Draw gaze lines
+        val gazeVector = getGazeVector(faceIndex)
         val gazeLength = size * 0.8f
-        canvas.drawLine(
-            leftEyeX,
-            leftEyeY,
-            leftEyeX + (leftIris.x - 0.5f) * gazeLength,
-            leftEyeY + (leftIris.y - 0.5f) * gazeLength,
-            gazePaint
-        )
-        canvas.drawLine(
-            rightEyeX,
-            rightEyeY,
-            rightEyeX + (rightIris.x - 0.5f) * gazeLength,
-            rightEyeY + (rightIris.y - 0.5f) * gazeLength,
-            gazePaint
-        )
+
+        if (gazeVector != null) {
+            canvas.drawLine(
+                leftEyeX,
+                leftEyeY,
+                leftEyeX + gazeVector.x * gazeLength * 2f,
+                leftEyeY + gazeVector.y * gazeLength * 2f,
+                gazePaint
+            )
+            canvas.drawLine(
+                rightEyeX,
+                rightEyeY,
+                rightEyeX + gazeVector.x * gazeLength * 2f,
+                rightEyeY + gazeVector.y * gazeLength * 2f,
+                gazePaint
+            )
+        } else {
+            val leftIris = facePose.irisPositions.leftIris
+            val rightIris = facePose.irisPositions.rightIris
+
+            canvas.drawLine(
+                leftEyeX,
+                leftEyeY,
+                leftEyeX + (leftIris.x - 0.5f) * gazeLength,
+                leftEyeY + (leftIris.y - 0.5f) * gazeLength,
+                gazePaint
+            )
+            canvas.drawLine(
+                rightEyeX,
+                rightEyeY,
+                rightEyeX + (rightIris.x - 0.5f) * gazeLength,
+                rightEyeY + (rightIris.y - 0.5f) * gazeLength,
+                gazePaint
+            )
+        }
     }
 
     // Helper function to get landmark screen coordinates

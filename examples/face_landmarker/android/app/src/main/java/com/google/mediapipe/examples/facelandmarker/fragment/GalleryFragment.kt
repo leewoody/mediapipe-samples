@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.google.mediapipe.examples.facelandmarker.fragment
+import com.mitac.mediapipe.examples.facelandmarker.R
 
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -35,7 +36,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.mediapipe.examples.facelandmarker.FaceLandmarkerHelper
 import com.google.mediapipe.examples.facelandmarker.MainViewModel
-import com.google.mediapipe.examples.facelandmarker.databinding.FragmentGalleryBinding
+import com.mitac.mediapipe.examples.facelandmarker.databinding.FragmentGalleryBinding
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import java.util.Locale
 import java.util.concurrent.Executors
@@ -97,39 +98,31 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         fragmentGalleryBinding.fabGetContent.setOnClickListener {
             getContent.launch(arrayOf("image/*", "video/*"))
         }
-        with(fragmentGalleryBinding.recyclerviewResults) {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = faceBlendshapesResultAdapter
-        }
+        fragmentGalleryBinding.recyclerviewResults.setLayoutManager(LinearLayoutManager(requireContext()))
+        fragmentGalleryBinding.recyclerviewResults.setAdapter(faceBlendshapesResultAdapter)
 
         initBottomSheetControls()
 
         val overlay = fragmentGalleryBinding.overlay
 
-        fragmentGalleryBinding.checkboxSimpleMode.setOnCheckedChangeListener { _, isChecked ->
-            overlay.simpleDrawMode = isChecked
+        // checkboxes
+        val listener = android.widget.CompoundButton.OnCheckedChangeListener { buttonView, isChecked ->
+            when(buttonView.id) {
+                R.id.checkbox_simple_mode -> overlay.simpleDrawMode = isChecked
+                R.id.checkbox_landmarks -> overlay.showFaceLandmarks = isChecked
+                R.id.checkbox_connectors -> overlay.showConnectors = isChecked
+                R.id.checkbox_head_pose_axes -> overlay.showHeadPoseAxes = isChecked
+                R.id.checkbox_gaze -> overlay.showGaze = isChecked
+                R.id.checkbox_face_pose_info -> overlay.showFacePoseInfo = isChecked
+            }
         }
-        fragmentGalleryBinding.checkboxLandmarks.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showFaceLandmarks = isChecked
-        }
-        fragmentGalleryBinding.checkboxConnectors.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showConnectors = isChecked
-        }
-        fragmentGalleryBinding.checkboxHeadPoseAxes.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showHeadPoseAxes = isChecked
-        }
-        fragmentGalleryBinding.checkboxGaze.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showGaze = isChecked
-        }
-//        fragmentGalleryBinding.checkboxFaceInfo.setOnCheckedChangeListener { _, isChecked ->
-//            overlay.showFaceInfo = isChecked
-//        }
-        fragmentGalleryBinding.checkboxFacePoseInfo.setOnCheckedChangeListener { _, isChecked ->
-            overlay.showFacePoseInfo = isChecked
-        }
-//        fragmentGalleryBinding.checkboxHeadPoseVisualization.setOnCheckedChangeListener { _, isChecked ->
-//            overlay.showHeadPoseVisualization = isChecked
-//        }
+
+        fragmentGalleryBinding.checkboxSimpleMode.setOnCheckedChangeListener(listener)
+        fragmentGalleryBinding.checkboxLandmarks.setOnCheckedChangeListener(listener)
+        fragmentGalleryBinding.checkboxConnectors.setOnCheckedChangeListener(listener)
+        fragmentGalleryBinding.checkboxHeadPoseAxes.setOnCheckedChangeListener(listener)
+        fragmentGalleryBinding.checkboxGaze.setOnCheckedChangeListener(listener)
+        fragmentGalleryBinding.checkboxFacePoseInfo.setOnCheckedChangeListener(listener)
     }
 
     override fun onPause() {
@@ -137,9 +130,9 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         if (fragmentGalleryBinding.videoView.isPlaying) {
             fragmentGalleryBinding.videoView.stopPlayback()
         }
-        fragmentGalleryBinding.videoView.visibility = View.GONE
-        fragmentGalleryBinding.imageResult.visibility = View.GONE
-        fragmentGalleryBinding.tvPlaceholder.visibility = View.VISIBLE
+        fragmentGalleryBinding.videoView.setVisibility(View.GONE)
+        fragmentGalleryBinding.imageResult.setVisibility(View.GONE)
+        fragmentGalleryBinding.tvPlaceholder.setVisibility(View.VISIBLE)
 
         // Shutdown the background executor
         if (::backgroundExecutor.isInitialized) {
@@ -155,20 +148,10 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
 
     private fun initBottomSheetControls() {
         // init bottom sheet settings
-        fragmentGalleryBinding.bottomSheetLayout.maxFacesValue.text =
-            viewModel.currentMaxFaces.toString()
-        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdValue.text =
-            String.format(
-                Locale.US, "%.2f", viewModel.currentMinFaceDetectionConfidence
-            )
-        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdValue.text =
-            String.format(
-                Locale.US, "%.2f", viewModel.currentMinFaceTrackingConfidence
-            )
-        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdValue.text =
-            String.format(
-                Locale.US, "%.2f", viewModel.currentMinFacePresenceConfidence
-            )
+        fragmentGalleryBinding.bottomSheetLayout.maxFacesValue.setText(viewModel.currentMaxFaces.toString())
+        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdValue.setText(String.format(Locale.US, "%.2f", viewModel.currentMinFaceDetectionConfidence))
+        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdValue.setText(String.format(Locale.US, "%.2f", viewModel.currentMinFaceTrackingConfidence))
+        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdValue.setText(String.format(Locale.US, "%.2f", viewModel.currentMinFacePresenceConfidence))
 
         // When clicked, lower detection score threshold floor
         fragmentGalleryBinding.bottomSheetLayout.detectionThresholdMinus.setOnClickListener {
@@ -248,7 +231,7 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
             viewModel.currentDelegate,
             false
         )
-        fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.onItemSelectedListener =
+        fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.setOnItemSelectedListener(
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
                     p0: AdapterView<*>?,
@@ -264,7 +247,7 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
                 override fun onNothingSelected(p0: AdapterView<*>?) {
                     /* no op */
                 }
-            }
+            })
     }
 
     // Update the values displayed in the bottom sheet. Reset detector.
@@ -272,26 +255,16 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         if (fragmentGalleryBinding.videoView.isPlaying) {
             fragmentGalleryBinding.videoView.stopPlayback()
         }
-        fragmentGalleryBinding.videoView.visibility = View.GONE
-        fragmentGalleryBinding.imageResult.visibility = View.GONE
+        fragmentGalleryBinding.videoView.setVisibility(View.GONE)
+        fragmentGalleryBinding.imageResult.setVisibility(View.GONE)
         fragmentGalleryBinding.overlay.clear()
-        fragmentGalleryBinding.bottomSheetLayout.maxFacesValue.text =
-            viewModel.currentMaxFaces.toString()
-        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdValue.text =
-            String.format(
-                Locale.US, "%.2f", viewModel.currentMinFaceDetectionConfidence
-            )
-        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdValue.text =
-            String.format(
-                Locale.US, "%.2f", viewModel.currentMinFaceTrackingConfidence
-            )
-        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdValue.text =
-            String.format(
-                Locale.US, "%.2f", viewModel.currentMinFacePresenceConfidence
-            )
+        fragmentGalleryBinding.bottomSheetLayout.maxFacesValue.setText(viewModel.currentMaxFaces.toString())
+        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdValue.setText(String.format(Locale.US, "%.2f", viewModel.currentMinFaceDetectionConfidence))
+        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdValue.setText(String.format(Locale.US, "%.2f", viewModel.currentMinFaceTrackingConfidence))
+        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdValue.setText(String.format(Locale.US, "%.2f", viewModel.currentMinFacePresenceConfidence))
 
         fragmentGalleryBinding.overlay.clear()
-        fragmentGalleryBinding.tvPlaceholder.visibility = View.VISIBLE
+        fragmentGalleryBinding.tvPlaceholder.setVisibility(View.VISIBLE)
     }
 
     // Load and display the image.
@@ -343,8 +316,7 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
                             )
 
                             setUiEnabled(true)
-                            fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
-                                String.format("%d ms", result.inferenceTime)
+                            fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.setText(String.format("%d ms", result.inferenceTime))
                         }
                     } ?: run { Log.e(TAG, "Error running face landmarker.") }
 
@@ -357,17 +329,15 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
         setUiEnabled(false)
         updateDisplayView(MediaType.VIDEO)
 
-        with(fragmentGalleryBinding.videoView) {
-            setVideoURI(uri)
-            // mute the audio
-            setOnPreparedListener { it.setVolume(0f, 0f) }
-            // Add completion listener for looping
-            setOnCompletionListener {
-                // Restart video from beginning
-                start()
-            }
-            requestFocus()
+        fragmentGalleryBinding.videoView.setVideoURI(uri)
+        // mute the audio
+        fragmentGalleryBinding.videoView.setOnPreparedListener { mp: android.media.MediaPlayer -> mp.setVolume(0f, 0f) }
+        // Add completion listener for looping
+        fragmentGalleryBinding.videoView.setOnCompletionListener { mp: android.media.MediaPlayer ->
+            // Restart video from beginning
+            fragmentGalleryBinding.videoView.start()
         }
+        fragmentGalleryBinding.videoView.requestFocus()
 
         backgroundExecutor = Executors.newSingleThreadScheduledExecutor()
         backgroundExecutor.execute {
@@ -383,8 +353,8 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
                 )
 
             activity?.runOnUiThread {
-                fragmentGalleryBinding.videoView.visibility = View.GONE
-                fragmentGalleryBinding.progress.visibility = View.VISIBLE
+                fragmentGalleryBinding.videoView.setVisibility(View.GONE)
+                fragmentGalleryBinding.progressBar.setVisibility(View.VISIBLE)
             }
 
             faceLandmarkerHelper.detectVideoFile(uri, VIDEO_INTERVAL_MS)
@@ -399,8 +369,8 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
 
     // Setup and display the video.
     private fun displayVideoResult(result: FaceLandmarkerHelper.VideoResultBundle) {
-        fragmentGalleryBinding.videoView.visibility = View.VISIBLE
-        fragmentGalleryBinding.progress.visibility = View.GONE
+        fragmentGalleryBinding.videoView.setVisibility(View.VISIBLE)
+        fragmentGalleryBinding.progressBar.setVisibility(View.GONE)
 
         fragmentGalleryBinding.videoView.start()
         var videoStartTimeMs = SystemClock.uptimeMillis()
@@ -436,8 +406,7 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
                             }
 
                             setUiEnabled(true)
-                            fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
-                                String.format("%d ms", result.inferenceTime)
+                            fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.setText(String.format("%d ms", result.inferenceTime))
                             
                             lastResultIndex = resultIndex
                         }
@@ -451,12 +420,9 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
     }
 
     private fun updateDisplayView(mediaType: MediaType) {
-        fragmentGalleryBinding.imageResult.visibility =
-            if (mediaType == MediaType.IMAGE) View.VISIBLE else View.GONE
-        fragmentGalleryBinding.videoView.visibility =
-            if (mediaType == MediaType.VIDEO) View.VISIBLE else View.GONE
-        fragmentGalleryBinding.tvPlaceholder.visibility =
-            if (mediaType == MediaType.UNKNOWN) View.VISIBLE else View.GONE
+        fragmentGalleryBinding.imageResult.setVisibility(if (mediaType == MediaType.IMAGE) View.VISIBLE else View.GONE)
+        fragmentGalleryBinding.videoView.setVisibility(if (mediaType == MediaType.VIDEO) View.VISIBLE else View.GONE)
+        fragmentGalleryBinding.tvPlaceholder.setVisibility(if (mediaType == MediaType.UNKNOWN) View.VISIBLE else View.GONE)
     }
 
     // Check the type of media that user selected.
@@ -471,30 +437,21 @@ class GalleryFragment : Fragment(), FaceLandmarkerHelper.LandmarkerListener {
     }
 
     private fun setUiEnabled(enabled: Boolean) {
-        fragmentGalleryBinding.fabGetContent.isEnabled = enabled
-        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdMinus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdPlus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdMinus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdPlus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdMinus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdPlus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.maxFacesPlus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.maxFacesMinus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.isEnabled =
-            enabled
+        fragmentGalleryBinding.fabGetContent.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdMinus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.detectionThresholdPlus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdMinus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.trackingThresholdPlus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdMinus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.presenceThresholdPlus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.maxFacesPlus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.maxFacesMinus.setEnabled(enabled)
+        fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.setEnabled(enabled)
     }
 
     private fun classifyingError() {
         activity?.runOnUiThread {
-            fragmentGalleryBinding.progress.visibility = View.GONE
+            fragmentGalleryBinding.progressBar.setVisibility(View.GONE)
             setUiEnabled(true)
             updateDisplayView(MediaType.UNKNOWN)
         }

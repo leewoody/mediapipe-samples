@@ -20,7 +20,8 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
-import com.google.mediapipe.examples.facelandmarker.databinding.ActivityMainBinding
+import com.mitac.mediapipe.examples.facelandmarker.databinding.ActivityMainBinding
+import com.mitac.mediapipe.examples.facelandmarker.R
 
 class MainActivity : AppCompatActivity() {
     private lateinit var activityMainBinding: ActivityMainBinding
